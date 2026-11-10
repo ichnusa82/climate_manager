@@ -8,7 +8,7 @@
             "default": "mdi:thermostat",
             "state": {
               "heating": "mdi:fire",
-              "idle": "mdi:thermostat",
+              "cooling": "mdi:snowflake",
               "off": "mdi:thermostat-off"
             }
           }
