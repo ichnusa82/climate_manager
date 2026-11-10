@@ -65,6 +65,10 @@ from .const import (
     CONF_PUMP,
     CONF_COMFORT_TEMP,
     CONF_ECO_TEMP,
+    CONF_COOL_COMFORT_TEMP,
+    CONF_COOL_ECO_TEMP,
+    DEFAULT_COOL_COMFORT_TEMP,
+    DEFAULT_COOL_ECO_TEMP,
     SEASON_SUMMER,
     CONF_SCHEDULE_SLOTS,
     DEFAULT_COMFORT_TEMP,
@@ -210,6 +214,8 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         self._window_open_since: float | None = None
         self._comfort = float(cfg.get(CONF_COMFORT_TEMP, DEFAULT_COMFORT_TEMP))
         self._eco = float(cfg.get(CONF_ECO_TEMP, DEFAULT_ECO_TEMP))
+        self._cool_comfort = float(cfg.get(CONF_COOL_COMFORT_TEMP, DEFAULT_COOL_COMFORT_TEMP))
+        self._cool_eco = float(cfg.get(CONF_COOL_ECO_TEMP, DEFAULT_COOL_ECO_TEMP))
         self._last_cooling: bool | None = None
         self._manual_target = DEFAULT_TARGET_TEMP
         self._temp_override: float | None = None
@@ -384,7 +390,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
                 attrs["active_source"] = "ac"
             else:
                 attrs["active_source"] = "heating"
-        if self._cooling and self._contact_mode:
+        if self._cooling:
             attrs["season"] = self._zone.season
         if self._block_cals:
             attrs["blocked"] = self._blocked()
@@ -393,8 +399,8 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         elif self._slots:
             attrs.update(
                 {
-                    "comfort_temperature": self._comfort,
-                    "eco_temperature": self._eco,
+                    "comfort_temperature": self._auto_temps()[0],
+                    "eco_temperature": self._auto_temps()[1],
                     "schedule_state": "comfort" if self._schedule_on() else "eco",
                     "temporary_override": self._temp_override,
                 }
@@ -524,10 +530,9 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         return any(self._is_on(c) for c in self._block_cals)
 
     def _summer_auto(self) -> bool:
-        """True se il cronotermostato a contatto è in Auto con stagione Estate."""
+        """True se il termostato è in Auto con stagione Estate (programma di raffrescamento)."""
         return (
-            self._contact_mode
-            and self._attr_hvac_mode == HVACMode.AUTO
+            self._attr_hvac_mode == HVACMode.AUTO
             and bool(self._slots)
             and self._cooling
             and self._zone.season == SEASON_SUMMER
@@ -536,6 +541,12 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
     def _cooling_now(self) -> bool:
         """True se in questo momento il termostato lavora in raffrescamento."""
         return self._attr_hvac_mode == HVACMode.COOL or self._summer_auto()
+
+    def _auto_temps(self) -> tuple[float, float]:
+        """Temperature comfort e ridotta del programma Auto per la stagione attuale."""
+        if self._cooling and self._zone.season == SEASON_SUMMER:
+            return self._cool_comfort, self._cool_eco
+        return self._comfort, self._eco
 
     def _schedule_on(self) -> bool:
         """True se adesso siamo dentro una fascia comfort."""
@@ -549,12 +560,13 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
             self._temp_override = None  # nuova fascia: finisce la modifica temporanea
         self._last_on = on
         if self._attr_hvac_mode == HVACMode.AUTO and self._slots:
+            comfort, eco = self._auto_temps()
             if self._blocked() and self._block_mode == BLOCK_ECO:
-                target = self._eco
+                target = eco
             elif self._temp_override is not None:
                 target = self._temp_override
             else:
-                target = self._comfort if self._schedule_on() else self._eco
+                target = comfort if self._schedule_on() else eco
         elif self._attr_hvac_mode == HVACMode.COOL:
             target = self._cool_target
         else:

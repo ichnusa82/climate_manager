@@ -122,8 +122,8 @@ La zona scalda quando il contatto chiede calore. Le fasce orarie, se ci sono, de
 ### Modalità Auto
 Disponibile quando esiste almeno una fascia. Dentro le fasce usa la temperatura comfort, fuori la ridotta. Se cambi la temperatura a mano, la modifica vale fino al prossimo cambio di fascia. Con un termostato fisico, fuori fascia il riscaldamento resta spento.
 
-### Estate / Inverno (cronotermostato a contatto)
-Solo per i termostati con ingresso a contatto (termostato fisico, senza sonda) che possono fare freddo (climatizzatore o raffrescamento abilitato) c'è l'entità **Stagione**. In *Inverno* la modalità Auto, dentro le fasce, usa il contatto per scaldare; in *Estate* lo usa per raffrescare (climatizzatore in freddo). Nella card cronotermostato la stagione si cambia toccando il pulsante Inverno/Estate. I termostati con sonda non hanno la stagione: in Auto scaldano, il freddo si usa con la modalità Freddo.
+### Estate / Inverno
+Se il termostato ha il freddo (climatizzatore o raffrescamento abilitato) c'è l'entità **Stagione**. In *Inverno* la modalità Auto scalda con le fasce (temperature comfort/ridotta). In *Estate* la modalità Auto raffresca con le stesse fasce e con le temperature comfort/ridotta estive (predefinite 26 / 28 °C, modificabili nelle opzioni). Nella card cronotermostato la stagione si cambia toccando il pulsante Inverno/Estate.
 
 ### Caldaia, pompa e setpoint
 La caldaia e la pompa si accendono quando almeno una zona chiede calore e solo con il riscaldamento (mai in modalità Freddo). Il setpoint caldaia è unico: se l'entità di override è accesa, viene scritto il setpoint di override.
