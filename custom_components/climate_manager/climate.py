@@ -254,12 +254,6 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         if (last := await self.async_get_last_state()) is not None:
             if last.state in [m.value for m in self.hvac_modes]:
                 self._attr_hvac_mode = HVACMode(last.state)
-        self._zone.hvac_mode = self._attr_hvac_mode
-        if self._ac and self._attr_hvac_mode in (HVACMode.HEAT, HVACMode.COOL):
-            # dopo un riavvio la stagione segue di nuovo il modo (Caldo/Freddo)
-            self._zone.season = (
-                SEASON_SUMMER if self._attr_hvac_mode == HVACMode.COOL else SEASON_WINTER
-            )
             if (m := last.attributes.get("manual_temperature")) is not None:
                 self._manual_target = float(m)
             elif (
@@ -433,8 +427,6 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
             return
         old_mode = self._attr_hvac_mode
         self._attr_hvac_mode = hvac_mode
-        self._zone.hvac_mode = hvac_mode
-        self._zone.notify(self.hass)  # aggiorna il selettore Stagione (attivo solo in Auto)
         if self._ac and hvac_mode in (HVACMode.HEAT, HVACMode.COOL):
             # con il climatizzatore: Caldo = Inverno, Freddo = Estate (Auto usa l'ultima)
             season = SEASON_SUMMER if hvac_mode == HVACMode.COOL else SEASON_WINTER

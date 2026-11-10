@@ -155,9 +155,7 @@ class SeasonSelect(SelectEntity, RestoreEntity):
 
     @property
     def available(self) -> bool:
-        # si vede con la sorgente Climatizzatore e si sceglie solo in Auto
-        # (in Caldo è Inverno, in Freddo è Estate)
-        return self._zone.heat_source == HEAT_SOURCE_AC and self._zone.hvac_mode == "auto"
+        return self._zone.heat_source == HEAT_SOURCE_AC
 
     @property
     def current_option(self) -> str:
