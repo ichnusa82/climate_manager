@@ -1,0 +1,20 @@
+{
+  "entity": {
+    "climate": {
+      "thermostat": {
+        "default": "mdi:thermostat",
+        "state_attributes": {
+          "hvac_action": {
+            "default": "mdi:thermostat",
+            "state": {
+              "heating": "mdi:fire",
+              "cooling": "mdi:snowflake",
+              "idle": "mdi:thermostat",
+              "off": "mdi:thermostat-off"
+            }
+          }
+        }
+      }
+    }
+  }
+}
