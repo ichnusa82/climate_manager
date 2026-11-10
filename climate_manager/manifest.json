@@ -1,0 +1,13 @@
+{
+  "domain": "climate_manager",
+  "name": "Climate Manager",
+  "codeowners": [
+    "@ichnusa82"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/ichnusa82/climate_manager",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/ichnusa82/climate_manager/issues",
+  "requirements": [],
+  "version": "1.1.0"
+}
