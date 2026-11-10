@@ -53,18 +53,36 @@ class HeatSourceSelect(SelectEntity, RestoreEntity):
         )
 
     @property
+    def _cool(self) -> bool:
+        return self._zone.hvac_mode == "cool"
+
+    @property
+    def options(self) -> list[str]:
+        # in Freddo "Riscaldamento + Climatizzatore" non ha senso: non si può scegliere
+        if self._cool:
+            return [HEAT_SOURCE_HEATING, HEAT_SOURCE_AC]
+        return list(self._attr_options)
+
+    @property
     def current_option(self) -> str:
+        if self._cool and self._zone.heat_source == HEAT_SOURCE_BOTH:
+            return HEAT_SOURCE_AC  # in Freddo lavora solo il climatizzatore
         return self._zone.heat_source
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
+        self._zone.listeners.append(self._zone_changed)
+        self.async_on_remove(lambda: self._zone.listeners.remove(self._zone_changed))
         last = await self.async_get_last_state()
         if last is not None and last.state in self._attr_options:
             self._zone.heat_source = last.state
             self._zone.notify(self.hass)
 
+    async def _zone_changed(self) -> None:
+        self.async_write_ha_state()
+
     async def async_select_option(self, option: str) -> None:
-        if option not in self._attr_options:
+        if option not in self.options:
             return
         self._zone.heat_source = option
         self.async_write_ha_state()
