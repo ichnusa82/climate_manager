@@ -136,7 +136,7 @@ La caldaia e la pompa si accendono quando almeno una zona chiede calore e solo c
 
 ### Climatizzatore e sorgente
 - **Freddo** usa sempre il climatizzatore.
-- **Caldo** usa la sorgente scelta: Riscaldamento, Climatizzatore oppure Riscaldamento + Climatizzatore insieme. Il combinato funziona solo in caldo.
+- **Caldo** usa la sorgente scelta: Riscaldamento, Climatizzatore Inverno oppure Misto. Misto funziona solo in caldo.
 
 ### Priorità
 L'antigelo ha la precedenza su tutto, poi vengono finestra aperta e blocco calendario, infine le regole normali.
