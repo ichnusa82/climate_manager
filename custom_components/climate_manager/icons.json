@@ -15,5 +15,10 @@
         }
       }
     }
+  },
+  "services": {
+    "set_schedule": {
+      "service": "mdi:calendar-clock"
+    }
   }
 }

@@ -1,0 +1,11 @@
+set_schedule:
+  target:
+    entity:
+      integration: climate_manager
+      domain: climate
+  fields:
+    slots:
+      required: true
+      example: '[{"days": ["mon","tue","wed","thu","fri"], "start": "06:30", "end": "08:30"}]'
+      selector:
+        object:

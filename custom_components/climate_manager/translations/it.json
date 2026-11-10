@@ -288,5 +288,17 @@
     "select_slot_first": {
       "message": "Seleziona prima la fascia da eliminare"
     }
+  },
+  "services": {
+    "set_schedule": {
+      "name": "Imposta programma",
+      "description": "Sostituisce tutte le fasce orarie del termostato.",
+      "fields": {
+        "slots": {
+          "name": "Fasce",
+          "description": "Elenco di fasce: giorni (mon…sun), inizio e fine (HH:MM). Fine 00:00 = mezzanotte."
+        }
+      }
+    }
   }
 }

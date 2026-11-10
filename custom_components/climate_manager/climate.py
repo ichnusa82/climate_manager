@@ -23,7 +23,11 @@ from homeassistant.const import (
     STATE_UNKNOWN,
     UnitOfTemperature,
 )
+import voluptuous as vol
+
 from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_platform
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import (
@@ -78,6 +82,7 @@ from .const import (
     DEFAULT_MAX_TEMP,
     DEFAULT_MIN_TEMP,
     DEFAULT_TARGET_TEMP,
+    DAY_ORDER,
     DOMAIN,
     get_heaters,
     parse_slots,
@@ -87,12 +92,40 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+SERVICE_SET_SCHEDULE = "set_schedule"
+
+
+def _hhmm(value: Any) -> str:
+    """Valida un orario "HH:MM" (accetta anche "HH:MM:SS")."""
+    try:
+        hours, minutes = (int(x) for x in str(value).split(":")[:2])
+    except ValueError as err:
+        raise vol.Invalid(f"orario non valido: {value}") from err
+    if not (0 <= hours <= 23 and 0 <= minutes <= 59):
+        raise vol.Invalid(f"orario non valido: {value}")
+    return f"{hours:02d}:{minutes:02d}"
+
+
+SLOT_SCHEMA = vol.Schema(
+    {
+        vol.Required("days"): vol.All(cv.ensure_list, [vol.In(DAY_ORDER)], vol.Length(min=1)),
+        vol.Required("start"): _hhmm,
+        vol.Required("end"): _hhmm,
+    }
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     zone = hass.data[DOMAIN]["zones"][entry.entry_id]
     async_add_entities([ClimateManagerThermostat(entry, zone)])
+    # programma completo in un colpo solo (usato dalla card cronotermostato)
+    entity_platform.async_get_current_platform().async_register_entity_service(
+        SERVICE_SET_SCHEDULE,
+        {vol.Required("slots"): vol.All(cv.ensure_list, [SLOT_SCHEMA])},
+        "async_set_schedule",
+    )
 
 
 class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
@@ -327,6 +360,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         attrs: dict[str, Any] = {
             "active_valves": self._active_heaters(),
             "manual_temperature": self._manual_target,
+            "schedule": [dict(s) for s in self._zone.slots],
         }
         if self._antifreeze > 0:
             attrs["antifreeze_active"] = self._antifreeze_active
@@ -388,6 +422,16 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
             self._calling = False
         await self._async_control()
         self.async_write_ha_state()
+
+    async def async_set_schedule(self, slots: list[dict]) -> None:
+        """Sostituisce tutte le fasce orarie (servizio climate_manager.set_schedule)."""
+        clean = []
+        for slot in slots:
+            days = [d for d in DAY_ORDER if d in slot["days"]]
+            clean.append({"days": days, "start": slot["start"], "end": slot["end"]})
+        self._zone.slots = clean
+        self._zone.editor["selected"] = None
+        self._zone.persist(self.hass)
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         if preset_mode not in self._presets:

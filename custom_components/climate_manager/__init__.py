@@ -2,11 +2,15 @@
 from __future__ import annotations
 
 import json
+import logging
+from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     CONF_BOILER_SETPOINT,
@@ -17,6 +21,13 @@ from .const import (
     get_heaters,
     get_shared_setpoint,
 )
+
+_LOGGER = logging.getLogger(__name__)
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+CARD_FILE = "climate-manager-schedule-card.js"
+CARD_URL = f"/{DOMAIN}/{CARD_FILE}"
 
 PLATFORMS = [
     Platform.CLIMATE,
@@ -65,7 +76,7 @@ class ZoneData:
         self.editor_changed()
         self.notify(hass)
 
-    def _persist(self, hass: HomeAssistant) -> None:
+    def persist(self, hass: HomeAssistant) -> None:
         hass.config_entries.async_update_entry(
             self.entry,
             options={
@@ -94,7 +105,7 @@ class ZoneData:
             self.editor["selected"] = len(self.slots) - 1
         else:
             self.slots[selected] = slot
-        self._persist(hass)
+        self.persist(hass)
 
     def delete_selected(self, hass: HomeAssistant) -> None:
         selected = self.editor["selected"]
@@ -104,12 +115,28 @@ class ZoneData:
             )
         del self.slots[selected]
         self.editor["selected"] = None
-        self._persist(hass)
+        self.persist(hass)
 
     def clear_all(self, hass: HomeAssistant) -> None:
         self.slots = []
         self.editor["selected"] = None
-        self._persist(hass)
+        self.persist(hass)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Registra la card cronotermostato: si carica da sola, senza aggiungere risorse."""
+    try:
+        from homeassistant.components.frontend import add_extra_js_url
+        from homeassistant.components.http import StaticPathConfig
+
+        manifest = json.loads((Path(__file__).parent / "manifest.json").read_text())
+        await hass.http.async_register_static_paths(
+            [StaticPathConfig(CARD_URL, str(Path(__file__).parent / "frontend" / CARD_FILE), True)]
+        )
+        add_extra_js_url(hass, f"{CARD_URL}?v={manifest.get('version', '0')}")
+    except Exception:  # noqa: BLE001 - la card è un extra, l'integrazione funziona lo stesso
+        _LOGGER.warning("Impossibile registrare la card cronotermostato", exc_info=True)
+    return True
 
 
 def _options_signature(entry: ConfigEntry) -> str:

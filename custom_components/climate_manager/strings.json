@@ -288,5 +288,17 @@
         "name": "13 Delete all slots"
       }
     }
+  },
+  "services": {
+    "set_schedule": {
+      "name": "Set schedule",
+      "description": "Replaces all the time slots of the thermostat.",
+      "fields": {
+        "slots": {
+          "name": "Slots",
+          "description": "List of slots: days (mon…sun), start and end (HH:MM). An end equal to 00:00 means midnight."
+        }
+      }
+    }
   }
 }

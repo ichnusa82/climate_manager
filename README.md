@@ -84,6 +84,33 @@ Per creare una fascia: lascia «Nuova fascia», attiva i giorni, imposta inizio 
 
 Queste entità sono nella sezione *Configurazione* e non compaiono nelle dashboard generate in automatico: aggiungile a mano alle tue card.
 
+## Card cronotermostato (cavalieri)
+
+L'integrazione installa da sola una card per la dashboard (non serve aggiungere risorse). Ogni cavaliere è un intervallo di 30 minuti: **alto = comfort / in fascia**, **basso = ridotta / fuori fascia**. Tocca o trascina per cambiarli, copia un giorno sugli altri e premi **Salva**.
+
+```yaml
+type: custom:climate-manager-schedule-card
+entity: climate.salone
+step: 30          # 15, 30 o 60 minuti (facoltativo)
+show_week: true   # riepilogo della settimana (facoltativo)
+title: Salone     # facoltativo
+```
+
+Le fasce si possono impostare anche con l'azione `climate_manager.set_schedule`:
+
+```yaml
+action: climate_manager.set_schedule
+target:
+  entity_id: climate.salone
+data:
+  slots:
+    - days: [mon, tue, wed, thu, fri]
+      start: "06:30"
+      end: "08:30"
+```
+
+Il programma attuale è nell'attributo `schedule` del termostato.
+
 ## Come funziona
 
 ### Termostato con sonda
