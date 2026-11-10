@@ -84,6 +84,28 @@ Per creare una fascia: lascia «Nuova fascia», attiva i giorni, imposta inizio 
 
 Queste entità sono nella sezione *Configurazione* e non compaiono nelle dashboard generate in automatico: aggiungile a mano alle tue card.
 
+## Card termostato e selettore
+
+Insieme all'integrazione arrivano anche due card, caricate in automatico (non serve aggiungere risorse):
+
+```yaml
+type: custom:climate-manager-card
+entity: climate.salone
+selects:                       # facoltativo: pulsanti per select (es. Sorgente)
+  - select.salone_sorgente_caldo_freddo
+entities:                      # facoltativo: riga di stato
+  - entity: switch.caldaia
+    name: Caldaia
+  - binary_sensor.finestra_salone
+```
+
+```yaml
+type: custom:climate-manager-select-card
+entity: select.salone_sorgente_caldo_freddo
+```
+
+Se in passato hai copiato `climate-manager-card.js` in `/config/www`, togli la risorsa `/local/climate-manager-card.js` dalla dashboard e cancella il file.
+
 ## Card cronotermostato (cavalieri)
 
 L'integrazione installa da sola una card per la dashboard (non serve aggiungere risorse). Ogni cavaliere è un intervallo di 30 minuti: **alto = comfort / in fascia**, **basso = ridotta / fuori fascia**. Tocca o trascina per cambiarli, copia un giorno sugli altri e premi **Salva**.

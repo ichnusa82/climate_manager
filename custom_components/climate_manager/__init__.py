@@ -26,8 +26,8 @@ _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-CARD_FILE = "climate-manager-schedule-card.js"
-CARD_URL = f"/{DOMAIN}/{CARD_FILE}"
+# card Lovelace distribuite con l'integrazione (si caricano da sole)
+CARD_FILES = ["climate-manager-card.js", "climate-manager-schedule-card.js"]
 
 PLATFORMS = [
     Platform.CLIMATE,
@@ -125,18 +125,24 @@ class ZoneData:
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Registra la card cronotermostato: si carica da sola, senza aggiungere risorse."""
+    """Registra le card di Climate Manager: si caricano da sole, senza aggiungere risorse."""
     try:
         from homeassistant.components.frontend import add_extra_js_url
         from homeassistant.components.http import StaticPathConfig
 
-        manifest = json.loads((Path(__file__).parent / "manifest.json").read_text())
+        base = Path(__file__).parent
+        manifest = json.loads((base / "manifest.json").read_text())
+        version = manifest.get("version", "0")
         await hass.http.async_register_static_paths(
-            [StaticPathConfig(CARD_URL, str(Path(__file__).parent / "frontend" / CARD_FILE), True)]
+            [
+                StaticPathConfig(f"/{DOMAIN}/{name}", str(base / "frontend" / name), True)
+                for name in CARD_FILES
+            ]
         )
-        add_extra_js_url(hass, f"{CARD_URL}?v={manifest.get('version', '0')}")
-    except Exception:  # noqa: BLE001 - la card è un extra, l'integrazione funziona lo stesso
-        _LOGGER.warning("Impossibile registrare la card cronotermostato", exc_info=True)
+        for name in CARD_FILES:
+            add_extra_js_url(hass, f"/{DOMAIN}/{name}?v={version}")
+    except Exception:  # noqa: BLE001 - le card sono un extra, l'integrazione funziona lo stesso
+        _LOGGER.warning("Impossibile registrare le card di Climate Manager", exc_info=True)
     return True
 
 
