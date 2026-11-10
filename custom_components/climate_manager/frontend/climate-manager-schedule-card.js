@@ -4,7 +4,7 @@
  * Cavaliere ALTO = comfort (dentro fascia), BASSO = ridotta (fuori fascia).
  * Salva con il servizio climate_manager.set_schedule.
  */
-const CM_VERSION = "1.2.0";
+const CM_VERSION = "1.2.1";
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 const I18N = {
