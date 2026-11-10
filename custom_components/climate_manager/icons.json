@@ -14,6 +14,17 @@
           }
         }
       }
+    },
+    "select": {
+      "heat_source": {
+        "default": "mdi:water-boiler",
+        "state": {
+          "heating": "mdi:water-boiler",
+          "ac": "mdi:sun-snowflake-variant",
+          "ac_summer": "mdi:snowflake",
+          "both": "mdi:fire-circle"
+        }
+      }
     }
   },
   "services": {

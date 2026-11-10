@@ -57,14 +57,6 @@ class HeatSourceSelect(SelectEntity, RestoreEntity):
         )
 
     @property
-    def icon(self) -> str:
-        return {
-            HEAT_SOURCE_AC: "mdi:sun-snowflake-variant",
-            HEAT_SOURCE_AC_SUMMER: "mdi:snowflake",
-            HEAT_SOURCE_BOTH: "mdi:radiator",
-        }.get(self._zone.heat_source, "mdi:water-boiler")
-
-    @property
     def options(self) -> list[str]:
         mode = self._zone.hvac_mode
         if mode == "cool":
