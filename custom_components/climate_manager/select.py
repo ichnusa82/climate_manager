@@ -11,13 +11,13 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     CONF_AC,
-    SEASON_SUMMER,
-    SEASON_WINTER,
+    CONF_COOLING_ENABLED,
     DOMAIN,
     NEW_SLOT_LABEL,
     lang_of,
     slot_summary,
     HEAT_SOURCE_AC,
+    HEAT_SOURCE_AC_SUMMER,
     HEAT_SOURCE_BOTH,
     HEAT_SOURCE_HEATING,
 )
@@ -30,43 +30,53 @@ async def async_setup_entry(
     zone = hass.data[DOMAIN]["zones"][entry.entry_id]
     entities: list[SelectEntity] = [SlotSelect(entry, zone)]
     if cfg.get(CONF_AC):  # without an AC the heat comes only from the heating system
-        entities.append(HeatSourceSelect(entry, zone))
-    if cfg.get(CONF_AC):  # attiva solo con la sorgente impostata su Climatizzatore
-        entities.append(SeasonSelect(entry, zone))
+        cooling = bool(cfg.get(CONF_COOLING_ENABLED, True))
+        entities.append(HeatSourceSelect(entry, zone, cooling))
     async_add_entities(entities)
 
 
 class HeatSourceSelect(SelectEntity, RestoreEntity):
-    """Con quale sorgente fa caldo il termostato in modalità Heat/Auto."""
+    """Sorgente: Riscaldamento (caldaia), Climatizzatore Inverno/Estate o entrambi."""
 
     _attr_has_entity_name = True
     _attr_translation_key = "heat_source"
     _attr_should_poll = False
-    _attr_icon = "mdi:radiator"
-    _attr_options = [HEAT_SOURCE_HEATING, HEAT_SOURCE_AC, HEAT_SOURCE_BOTH]
+    _attr_options = [
+        HEAT_SOURCE_HEATING,
+        HEAT_SOURCE_AC,
+        HEAT_SOURCE_AC_SUMMER,
+        HEAT_SOURCE_BOTH,
+    ]
 
-    def __init__(self, entry: ConfigEntry, zone) -> None:
+    def __init__(self, entry: ConfigEntry, zone, cooling: bool) -> None:
         self._zone = zone
+        self._cooling = cooling
         self._attr_unique_id = f"{entry.entry_id}_heat_source"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)}, name=entry.title
         )
 
     @property
-    def _cool(self) -> bool:
-        return self._zone.hvac_mode == "cool"
+    def icon(self) -> str:
+        return {
+            HEAT_SOURCE_AC: "mdi:sun-snowflake-variant",
+            HEAT_SOURCE_AC_SUMMER: "mdi:snowflake",
+            HEAT_SOURCE_BOTH: "mdi:radiator",
+        }.get(self._zone.heat_source, "mdi:water-boiler")
 
     @property
     def options(self) -> list[str]:
-        # in Freddo "Riscaldamento + Climatizzatore" non ha senso: non si può scegliere
-        if self._cool:
-            return [HEAT_SOURCE_HEATING, HEAT_SOURCE_AC]
+        mode = self._zone.hvac_mode
+        if mode == "cool":
+            # in Freddo lavora solo il climatizzatore in raffrescamento
+            return [HEAT_SOURCE_AC_SUMMER]
+        if mode == "heat" or not self._cooling:
+            # in Caldo (o con il freddo disabilitato) niente Climatizzatore Estate
+            return [HEAT_SOURCE_HEATING, HEAT_SOURCE_AC, HEAT_SOURCE_BOTH]
         return list(self._attr_options)
 
     @property
     def current_option(self) -> str:
-        if self._cool and self._zone.heat_source == HEAT_SOURCE_BOTH:
-            return HEAT_SOURCE_AC  # in Freddo lavora solo il climatizzatore
         return self._zone.heat_source
 
     async def async_added_to_hass(self) -> None:
@@ -75,7 +85,15 @@ class HeatSourceSelect(SelectEntity, RestoreEntity):
         self.async_on_remove(lambda: self._zone.listeners.remove(self._zone_changed))
         last = await self.async_get_last_state()
         if last is not None and last.state in self._attr_options:
-            self._zone.heat_source = last.state
+            source = last.state
+            # dopo un riavvio vale la stessa regola del modo: Freddo = Estate, Caldo = Inverno
+            if self._zone.hvac_mode == "cool":
+                source = HEAT_SOURCE_AC_SUMMER
+            elif source == HEAT_SOURCE_AC_SUMMER and (
+                self._zone.hvac_mode == "heat" or not self._cooling
+            ):
+                source = HEAT_SOURCE_AC
+            self._zone.heat_source = source
             self._zone.notify(self.hass)
 
     async def _zone_changed(self) -> None:
@@ -150,52 +168,3 @@ class SlotSelect(SelectEntity):
             editor["start"] = slot["start"]
             editor["end"] = slot["end"]
         self._zone.editor_changed()
-
-
-class SeasonSelect(SelectEntity, RestoreEntity):
-    """Stagione del programma Auto: Inverno scalda, Estate raffresca."""
-
-    _attr_has_entity_name = True
-    _attr_translation_key = "season"
-    _attr_should_poll = False
-    _attr_options = [SEASON_WINTER, SEASON_SUMMER]
-
-    def __init__(self, entry: ConfigEntry, zone) -> None:
-        self._zone = zone
-        self._attr_unique_id = f"{entry.entry_id}_season"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)}, name=entry.title
-        )
-
-    @property
-    def icon(self) -> str:
-        return "mdi:white-balance-sunny" if self._zone.season == SEASON_SUMMER else "mdi:snowflake"
-
-    @property
-    def available(self) -> bool:
-        # si vede con la sorgente Climatizzatore e si sceglie solo in Auto
-        # (in Caldo è Inverno, in Freddo è Estate)
-        return self._zone.heat_source == HEAT_SOURCE_AC and self._zone.hvac_mode == "auto"
-
-    @property
-    def current_option(self) -> str:
-        return self._zone.season
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        self._zone.listeners.append(self._zone_changed)
-        self.async_on_remove(lambda: self._zone.listeners.remove(self._zone_changed))
-        last = await self.async_get_last_state()
-        if last is not None and last.state in self._attr_options:
-            self._zone.season = last.state
-            self._zone.notify(self.hass)
-
-    async def _zone_changed(self) -> None:
-        self.async_write_ha_state()
-
-    async def async_select_option(self, option: str) -> None:
-        if option not in self._attr_options or option == self._zone.season:
-            return
-        self._zone.season = option
-        self.async_write_ha_state()
-        self._zone.notify(self.hass)

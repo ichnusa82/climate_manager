@@ -18,7 +18,7 @@ const I18N = {
     notAuto: "Il termostato non è in Auto: il programma vale solo in modalità Auto.", toAuto: "Passa ad Auto",
     blocked: "Programma bloccato da calendario", missing: "Entità non trovata", noSchedule: "Questa entità non è un termostato Climate Manager",
     error: "Errore nel salvataggio", hint: "Tocca o trascina sui cavalieri",
-    winter: "Inverno", summer: "Estate", seasonTip: "Tocca per cambiare stagione", seasonAuto: "In Caldo è Inverno, in Freddo è Estate: la stagione si sceglie in Auto",
+    winter: "Clima Inverno", summer: "Clima Estate", seasonTip: "Sorgente del termostato: si cambia dal selettore Sorgente",
   },
   en: {
     days: { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" },
@@ -30,7 +30,7 @@ const I18N = {
     notAuto: "The thermostat is not in Auto: the schedule only applies in Auto mode.", toAuto: "Switch to Auto",
     blocked: "Schedule blocked by calendar", missing: "Entity not found", noSchedule: "This entity is not a Climate Manager thermostat",
     error: "Save failed", hint: "Tap or drag over the pegs",
-    winter: "Winter", summer: "Summer", seasonTip: "Tap to change season", seasonAuto: "Heat means Winter, Cool means Summer: pick the season in Auto",
+    winter: "AC winter", summer: "AC summer", seasonTip: "Thermostat source: change it with the Source selector",
   },
 };
 
@@ -267,14 +267,11 @@ class ClimateManagerScheduleCard extends HTMLElement {
     let season = "";
     if (a.season) {
       const summer = a.season === "summer";
-      const canPick = st.state === "auto";
-      season = `<button class="season ${summer ? "summer" : "winter"}" ${canPick ? "" : "disabled"} title="${canPick ? t.seasonTip : t.seasonAuto}">
-        <ha-icon icon="${summer ? "mdi:white-balance-sunny" : "mdi:snowflake"}"></ha-icon>${summer ? t.summer : t.winter}</button>`;
+      season = `<span class="season ${summer ? "summer" : "winter"}" title="${t.seasonTip}">
+        <ha-icon icon="${summer ? "mdi:white-balance-sunny" : "mdi:snowflake"}"></ha-icon>${summer ? t.summer : t.winter}</span>`;
     }
     this.toggleAttribute("summer", a.season === "summer");
     $("info").innerHTML = `${cur}${tgt}${badge}${season}<span class="mode">${mode}</span>`;
-    const sbtn = $("info").querySelector(".season");
-    if (sbtn) sbtn.onclick = () => this._toggleSeason(a.season);
 
     const warn = $("warn");
     const hasSlots = this._saved?.some((d) => d.some(Boolean));
@@ -420,24 +417,6 @@ class ClimateManagerScheduleCard extends HTMLElement {
     }
   }
 
-  _seasonEntity() {
-    const ents = this._hass.entities || {};
-    const dev = ents[this._config.entity]?.device_id;
-    if (!dev) return null;
-    return Object.values(ents).find(
-      (e) => e.device_id === dev && e.platform === "climate_manager" && e.translation_key === "season"
-    )?.entity_id || null;
-  }
-
-  _toggleSeason(current) {
-    const id = this._config.season_entity || this._seasonEntity();
-    if (!id) return;
-    this._hass.callService("select", "select_option", {
-      entity_id: id,
-      option: current === "summer" ? "winter" : "summer",
-    });
-  }
-
   /* ---------- modifiche ---------- */
   _setPeg(i, value, refresh = true) {
     this._grid[this._day][i] = value;
@@ -481,10 +460,9 @@ class ClimateManagerScheduleCard extends HTMLElement {
 const STYLE = `
   :host { --cm-on: var(--state-climate-heat-color, #ff8a00); --cm-off: var(--state-climate-cool-color, #2b9af3); }
   :host([summer]) { --cm-on: var(--state-climate-cool-color, #2b9af3); --cm-off: #8a8a8a; }
-  .season { font: inherit; display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:10px; cursor:pointer;
+  .season { font: inherit; display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:10px;
             border:1px solid var(--divider-color); background:none; color: var(--primary-text-color); }
   .season ha-icon { --mdc-icon-size:16px; }
-  .season:disabled { cursor:default; opacity:.75; }
   .season.winter ha-icon { color: #4fc3f7; } .season.summer ha-icon { color: #ffb300; }
   [hidden] { display: none !important; }
   ha-card { padding: 16px; }

@@ -44,6 +44,7 @@ from .const import (
     CONF_BLOCK_MODE,
     CONF_AC,
     HEAT_SOURCE_AC,
+    HEAT_SOURCE_AC_SUMMER,
     HEAT_SOURCE_BOTH,
     CONF_ANTIFREEZE,
     ANTIFREEZE_MARGIN,
@@ -69,8 +70,6 @@ from .const import (
     CONF_COOL_ECO_TEMP,
     DEFAULT_COOL_COMFORT_TEMP,
     DEFAULT_COOL_ECO_TEMP,
-    SEASON_SUMMER,
-    SEASON_WINTER,
     CONF_SCHEDULE_SLOTS,
     DEFAULT_COMFORT_TEMP,
     DEFAULT_ECO_TEMP,
@@ -254,12 +253,6 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         if (last := await self.async_get_last_state()) is not None:
             if last.state in [m.value for m in self.hvac_modes]:
                 self._attr_hvac_mode = HVACMode(last.state)
-        self._zone.hvac_mode = self._attr_hvac_mode
-        if self._ac and self._attr_hvac_mode in (HVACMode.HEAT, HVACMode.COOL):
-            # dopo un riavvio la stagione segue di nuovo il modo (Caldo/Freddo)
-            self._zone.season = (
-                SEASON_SUMMER if self._attr_hvac_mode == HVACMode.COOL else SEASON_WINTER
-            )
             if (m := last.attributes.get("manual_temperature")) is not None:
                 self._manual_target = float(m)
             elif (
@@ -268,6 +261,9 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
                 self._manual_target = float(t)
             if (c := last.attributes.get("cool_temperature")) is not None:
                 self._cool_target = float(c)
+
+        self._zone.hvac_mode = self._attr_hvac_mode
+        self._align_source()
 
         if self._contact_mode:
             if self._contact:
@@ -397,8 +393,10 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
                 attrs["active_source"] = "ac"
             else:
                 attrs["active_source"] = "heating"
-        if self._season_active():
-            attrs["season"] = self._zone.season
+        if self._ac and self._zone.heat_source in (HEAT_SOURCE_AC, HEAT_SOURCE_AC_SUMMER):
+            attrs["season"] = (
+                "summer" if self._zone.heat_source == HEAT_SOURCE_AC_SUMMER else "winter"
+            )
         if self._block_cals:
             attrs["blocked"] = self._blocked()
         if self._slots and self._contact_mode:
@@ -434,13 +432,8 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         old_mode = self._attr_hvac_mode
         self._attr_hvac_mode = hvac_mode
         self._zone.hvac_mode = hvac_mode
-        self._zone.notify(self.hass)  # aggiorna il selettore Stagione (attivo solo in Auto)
-        if self._ac and hvac_mode in (HVACMode.HEAT, HVACMode.COOL):
-            # con il climatizzatore: Caldo = Inverno, Freddo = Estate (Auto usa l'ultima)
-            season = SEASON_SUMMER if hvac_mode == HVACMode.COOL else SEASON_WINTER
-            if self._zone.season != season:
-                self._zone.season = season
-                self._zone.notify(self.hass)
+        self._align_source()
+        self._zone.notify(self.hass)  # aggiorna il selettore della sorgente
         self._temp_override = None
         self._last_change = None  # un cambio di modo non è vincolato dal ciclo minimo
         if HVACMode.COOL in (old_mode, hvac_mode):
@@ -544,17 +537,28 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         """True se almeno un calendario di blocco ha un evento in corso."""
         return any(self._is_on(c) for c in self._block_cals)
 
-    def _season_active(self) -> bool:
-        """Estate/Inverno vale solo con la sorgente impostata su Climatizzatore."""
-        return bool(self._ac) and self._zone.heat_source == HEAT_SOURCE_AC
+    def _align_source(self) -> None:
+        """Caldo: Climatizzatore Estate diventa Inverno. Freddo: sempre Climatizzatore Estate."""
+        if not self._ac:
+            return
+        mode = self._attr_hvac_mode
+        if mode == HVACMode.COOL:
+            self._zone.heat_source = HEAT_SOURCE_AC_SUMMER
+        elif mode == HVACMode.HEAT and self._zone.heat_source == HEAT_SOURCE_AC_SUMMER:
+            self._zone.heat_source = HEAT_SOURCE_AC
+        elif self._zone.heat_source == HEAT_SOURCE_AC_SUMMER and not self._cooling:
+            self._zone.heat_source = HEAT_SOURCE_AC  # freddo disabilitato nelle opzioni
+
+    def _summer_source(self) -> bool:
+        """True se la sorgente è Climatizzatore Estate."""
+        return bool(self._ac) and self._cooling and self._zone.heat_source == HEAT_SOURCE_AC_SUMMER
 
     def _summer_auto(self) -> bool:
-        """True se il termostato è in Auto con stagione Estate (programma di raffrescamento)."""
+        """True se il termostato è in Auto con sorgente Climatizzatore Estate (raffresca)."""
         return (
             self._attr_hvac_mode == HVACMode.AUTO
             and bool(self._slots)
-            and self._season_active()
-            and self._zone.season == SEASON_SUMMER
+            and self._summer_source()
         )
 
     def _cooling_now(self) -> bool:
@@ -563,7 +567,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
 
     def _auto_temps(self) -> tuple[float, float]:
         """Temperature comfort e ridotta del programma Auto per la stagione attuale."""
-        if self._season_active() and self._zone.season == SEASON_SUMMER:
+        if self._summer_source():
             return self._cool_comfort, self._cool_eco
         return self._comfort, self._eco
 
@@ -674,7 +678,9 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         if self._cooling_now():
             return True  # il freddo si fa sempre con il climatizzatore
         if self._attr_hvac_mode in (HVACMode.HEAT, HVACMode.AUTO):
-            return self._zone.heat_source in (HEAT_SOURCE_AC, HEAT_SOURCE_BOTH)
+            return self._zone.heat_source in (
+                HEAT_SOURCE_AC, HEAT_SOURCE_AC_SUMMER, HEAT_SOURCE_BOTH
+            )
         return False
 
     def _use_heating(self) -> bool:

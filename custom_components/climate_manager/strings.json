@@ -233,20 +233,14 @@
       "heat_source": {
         "name": "Heat - cool source",
         "state": {
-          "heating": "Heating",
-          "ac": "Air conditioner",
+          "heating": "Heating (boiler)",
+          "ac": "Air conditioner winter",
+          "ac_summer": "Air conditioner summer",
           "both": "Heating + Air conditioner"
         }
       },
       "slot": {
         "name": "01 Slot"
-      },
-      "season": {
-        "name": "Season",
-        "state": {
-          "winter": "Winter (heating)",
-          "summer": "Summer (cooling)"
-        }
       }
     },
     "number": {

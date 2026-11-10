@@ -197,20 +197,14 @@
       "heat_source": {
         "name": "Sorgente caldo - freddo",
         "state": {
-          "heating": "Riscaldamento",
-          "ac": "Climatizzatore",
+          "heating": "Riscaldamento (caldaia)",
+          "ac": "Climatizzatore Inverno",
+          "ac_summer": "Climatizzatore Estate",
           "both": "Riscaldamento + Climatizzatore"
         }
       },
       "slot": {
         "name": "01 Fascia"
-      },
-      "season": {
-        "name": "Stagione",
-        "state": {
-          "winter": "Inverno (caldo)",
-          "summer": "Estate (freddo)"
-        }
       }
     },
     "number": {

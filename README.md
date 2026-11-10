@@ -17,7 +17,7 @@ Ogni zona diventa un'entità `climate` più alcune entità di supporto, e si con
 - **Calendari di blocco:** se un calendario è attivo, il programma si blocca (spegne o usa la temperatura ridotta).
 - **Finestre:** se una finestra resta aperta oltre il ritardo, il riscaldamento della zona si sospende.
 - **Antigelo:** sotto la temperatura impostata scalda sempre, anche da spento.
-- **Sorgente caldo - freddo:** con un climatizzatore configurato si sceglie se il caldo viene dal riscaldamento, dal climatizzatore o da entrambi.
+- **Sorgente caldo - freddo:** con un climatizzatore configurato si sceglie tra Riscaldamento (caldaia), Climatizzatore Inverno, Climatizzatore Estate o Riscaldamento + Climatizzatore.
 
 ## Installazione
 
@@ -52,7 +52,7 @@ Aggiungi l'integrazione una volta **per ogni zona**. Il modulo chiede:
 | Calendari di blocco e modalità | Cosa fare quando un calendario è attivo |
 | Sensore Finestra / Ritardo | Sensori di apertura e minuti prima di sospendere |
 | Antigelo Temperatura | Sotto questa temperatura scalda sempre. 0 = disattivato |
-| Abilita modalità freddo | Mostra la modalità Freddo; richiede il climatizzatore (la selezione Estate/Inverno resta comunque) |
+| Abilita modalità freddo | Mostra la modalità Freddo e la sorgente Climatizzatore Estate; richiede il climatizzatore |
 | Tolleranza caldo / freddo | Isteresi di accensione e spegnimento |
 | Ciclo minimo di accensione | Minuti minimi di accensione, 0 = disattivato |
 | Temperatura minima / massima | Limiti del termostato (di default 15 e 30 °C) |
@@ -122,8 +122,14 @@ La zona scalda quando il contatto chiede calore. Le fasce orarie, se ci sono, de
 ### Modalità Auto
 Disponibile quando esiste almeno una fascia. Dentro le fasce usa la temperatura comfort, fuori la ridotta. Se cambi la temperatura a mano, la modifica vale fino al prossimo cambio di fascia. Con un termostato fisico, fuori fascia il riscaldamento resta spento.
 
-### Estate / Inverno
-Funziona solo sui termostati con climatizzatore e con la **Sorgente caldo - freddo** impostata su *Climatizzatore*; con le altre sorgenti l'entità **Stagione** è non disponibile e Auto scalda soltanto. In *Inverno* la modalità Auto scalda con le fasce (temperature comfort/ridotta). In *Estate* raffresca con le stesse fasce e con le temperature comfort/ridotta estive (predefinite 26 / 28 °C, modificabili nelle opzioni). Con il termostato a contatto, dentro le fasce il contatto comanda il climatizzatore in caldo o in freddo secondo la stagione. Nella card cronotermostato il pulsante Inverno/Estate compare solo in questo caso. Con il climatizzatore configurato, selezionando **Caldo** la stagione diventa *Inverno* e selezionando **Freddo** diventa *Estate*; in **Auto** la stagione si sceglie con il selettore Estate/Inverno (attivo solo in Auto).
+### Sorgente (termostati con climatizzatore)
+Il selettore **Sorgente** ha quattro voci:
+- **Riscaldamento (caldaia)**: scalda con l'impianto della caldaia (valvole, pompa, caldaia).
+- **Climatizzatore Inverno**: scalda con il climatizzatore.
+- **Climatizzatore Estate**: raffresca con il climatizzatore.
+- **Riscaldamento + Climatizzatore**: scaldano tutti e due.
+
+Passando a **Caldo**, Climatizzatore Estate diventa Climatizzatore Inverno (e non si può scegliere). Passando a **Freddo** la sorgente diventa Climatizzatore Estate. In **Auto** si sceglie liberamente: con Climatizzatore Estate Auto raffresca seguendo le fasce con le temperature comfort/ridotta estive (predefinite 26 / 28 °C), con le altre scalda. Climatizzatore Estate compare solo se la modalità freddo è abilitata. Nella card cronotermostato un'etichetta mostra Clima Inverno / Clima Estate.
 
 ### Caldaia, pompa e setpoint
 La caldaia e la pompa si accendono quando almeno una zona chiede calore e solo con il riscaldamento (mai in modalità Freddo). Il setpoint caldaia è unico: se l'entità di override è accesa, viene scritto il setpoint di override.
