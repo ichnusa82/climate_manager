@@ -70,6 +70,7 @@ from .const import (
     DEFAULT_COOL_COMFORT_TEMP,
     DEFAULT_COOL_ECO_TEMP,
     SEASON_SUMMER,
+    SEASON_WINTER,
     CONF_SCHEDULE_SLOTS,
     DEFAULT_COMFORT_TEMP,
     DEFAULT_ECO_TEMP,
@@ -426,6 +427,12 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
             return
         old_mode = self._attr_hvac_mode
         self._attr_hvac_mode = hvac_mode
+        if self._ac and hvac_mode in (HVACMode.HEAT, HVACMode.COOL):
+            # con il climatizzatore: Caldo = Inverno, Freddo = Estate (Auto usa l'ultima)
+            season = SEASON_SUMMER if hvac_mode == HVACMode.COOL else SEASON_WINTER
+            if self._zone.season != season:
+                self._zone.season = season
+                self._zone.notify(self.hass)
         self._temp_override = None
         self._last_change = None  # un cambio di modo non è vincolato dal ciclo minimo
         if HVACMode.COOL in (old_mode, hvac_mode):
