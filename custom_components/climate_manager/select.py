@@ -12,6 +12,8 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from .const import (
     CONF_AC,
     CONF_COOLING_ENABLED,
+    CONF_INPUT_TYPE,
+    INPUT_CONTACT,
     SEASON_SUMMER,
     SEASON_WINTER,
     DOMAIN,
@@ -32,7 +34,10 @@ async def async_setup_entry(
     entities: list[SelectEntity] = [SlotSelect(entry, zone)]
     if cfg.get(CONF_AC):  # without an AC the heat comes only from the heating system
         entities.append(HeatSourceSelect(entry, zone))
-    if cfg.get(CONF_AC) or cfg.get(CONF_COOLING_ENABLED):  # serve solo se c'è il freddo
+    # solo per il cronotermostato a contatto (senza sonda) che può fare anche freddo
+    if cfg.get(CONF_INPUT_TYPE) == INPUT_CONTACT and (
+        cfg.get(CONF_AC) or cfg.get(CONF_COOLING_ENABLED)
+    ):
         entities.append(SeasonSelect(entry, zone))
     async_add_entities(entities)
 

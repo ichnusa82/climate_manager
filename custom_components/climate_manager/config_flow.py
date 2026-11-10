@@ -34,10 +34,6 @@ from .const import (
     CONF_PUMP,
     CONF_COMFORT_TEMP,
     CONF_ECO_TEMP,
-    CONF_COOL_COMFORT_TEMP,
-    CONF_COOL_ECO_TEMP,
-    DEFAULT_COOL_COMFORT_TEMP,
-    DEFAULT_COOL_ECO_TEMP,
     CONF_SCHEDULE_SLOTS,
     DEFAULT_COMFORT_TEMP,
     DEFAULT_ECO_TEMP,
@@ -189,14 +185,6 @@ def _common_fields(defaults: dict[str, Any]) -> dict:
         ): _number(0, 40, 0.5),
         vol.Required(
             CONF_ECO_TEMP, default=defaults.get(CONF_ECO_TEMP, DEFAULT_ECO_TEMP)
-        ): _number(0, 40, 0.5),
-        vol.Required(
-            CONF_COOL_COMFORT_TEMP,
-            default=defaults.get(CONF_COOL_COMFORT_TEMP, DEFAULT_COOL_COMFORT_TEMP),
-        ): _number(0, 40, 0.5),
-        vol.Required(
-            CONF_COOL_ECO_TEMP,
-            default=defaults.get(CONF_COOL_ECO_TEMP, DEFAULT_COOL_ECO_TEMP),
         ): _number(0, 40, 0.5),
         vol.Optional(
             CONF_BLOCK_CALENDARS,
