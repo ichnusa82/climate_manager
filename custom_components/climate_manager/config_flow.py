@@ -28,7 +28,6 @@ from .const import (
     INPUT_CONTACT,
     INPUT_TEMPERATURE,
     CONF_COLD_TOLERANCE,
-    CONF_COOLING_ENABLED,
     CONF_HOT_TOLERANCE,
     CONF_MIN_CYCLE,
     CONF_PUMP,
@@ -225,9 +224,6 @@ def _common_fields(defaults: dict[str, Any]) -> dict:
         vol.Required(
             CONF_ANTIFREEZE, default=defaults.get(CONF_ANTIFREEZE, DEFAULT_ANTIFREEZE)
         ): _number(0, 15, 0.5),
-        vol.Required(
-            CONF_COOLING_ENABLED, default=defaults.get(CONF_COOLING_ENABLED, False)
-        ): selector.BooleanSelector(),
         vol.Required(
             CONF_HOT_TOLERANCE,
             default=defaults.get(

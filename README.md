@@ -10,7 +10,7 @@ Ogni zona diventa un'entità `climate` più alcune entità di supporto, e si con
 
 - **Ingresso a scelta:** sensore di temperatura oppure termostato fisico (contatto chiuso = richiesta di calore).
 - **Uscite:** una o più valvole/relè, uscita di accensione caldaia, uscita pompa, climatizzatore.
-- **Modalità:** Spento, Caldo, Freddo (se abilitata) e Auto (con fasce orarie).
+- **Modalità:** Spento, Caldo, Freddo (solo con climatizzatore) e Auto (con fasce orarie).
 - **Preset:** per scegliere quali valvole tenere attive (utile se una zona ha più elettrovalvole).
 - **Setpoint caldaia:** un setpoint unico, condiviso da tutte le zone con la stessa caldaia, con valore di override.
 - **Fasce orarie:** temperatura comfort dentro le fasce, temperatura ridotta fuori. Funzionano sia con la sonda sia con il termostato fisico.
@@ -52,7 +52,6 @@ Aggiungi l'integrazione una volta **per ogni zona**. Il modulo chiede:
 | Calendari di blocco e modalità | Cosa fare quando un calendario è attivo |
 | Sensore Finestra / Ritardo | Sensori di apertura e minuti prima di sospendere |
 | Antigelo Temperatura | Sotto questa temperatura scalda sempre. 0 = disattivato |
-| Abilita modalità freddo | Mostra la modalità Freddo (richiede il climatizzatore) |
 | Tolleranza caldo / freddo | Isteresi di accensione e spegnimento |
 | Ciclo minimo di accensione | Minuti minimi di accensione, 0 = disattivato |
 | Temperatura minima / massima | Limiti del termostato (di default 15 e 30 °C) |
