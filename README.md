@@ -17,7 +17,7 @@ Ogni zona diventa un'entità `climate` più alcune entità di supporto, e si con
 - **Calendari di blocco:** se un calendario è attivo, il programma si blocca (spegne o usa la temperatura ridotta).
 - **Finestre:** se una finestra resta aperta oltre il ritardo, il riscaldamento della zona si sospende.
 - **Antigelo:** sotto la temperatura impostata scalda sempre, anche da spento.
-- **Sorgente caldo - freddo:** con un climatizzatore configurato si sceglie tra Riscaldamento (caldaia), Climatizzatore Inverno, Climatizzatore Estate o Riscaldamento + Climatizzatore.
+- **Sorgente caldo - freddo:** con un climatizzatore configurato si sceglie tra Riscaldamento, Climatizzatore Inverno, Climatizzatore Estate o Misto.
 
 ## Installazione
 
@@ -124,10 +124,10 @@ Disponibile quando esiste almeno una fascia. Dentro le fasce usa la temperatura 
 
 ### Sorgente (termostati con climatizzatore)
 Il selettore **Sorgente** ha quattro voci:
-- **Riscaldamento (caldaia)**: scalda con l'impianto della caldaia (valvole, pompa, caldaia).
+- **Riscaldamento**: scalda con l'impianto della caldaia (valvole, pompa, caldaia).
 - **Climatizzatore Inverno**: scalda con il climatizzatore.
 - **Climatizzatore Estate**: raffresca con il climatizzatore.
-- **Riscaldamento + Climatizzatore**: scaldano tutti e due.
+- **Misto**: scaldano tutti e due, riscaldamento e climatizzatore.
 
 Passando a **Caldo**, Climatizzatore Estate diventa Climatizzatore Inverno (e non si può scegliere). Passando a **Freddo** la sorgente diventa Climatizzatore Estate. In **Auto** si sceglie liberamente: con Climatizzatore Estate Auto raffresca seguendo le fasce con le temperature comfort/ridotta estive (predefinite 26 / 28 °C), con le altre scalda. Climatizzatore Estate compare solo se la modalità freddo è abilitata. Nella card cronotermostato un'etichetta mostra Clima Inverno / Clima Estate.
 

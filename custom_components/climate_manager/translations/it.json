@@ -197,10 +197,10 @@
       "heat_source": {
         "name": "Sorgente caldo - freddo",
         "state": {
-          "heating": "Riscaldamento (caldaia)",
+          "heating": "Riscaldamento",
           "ac": "Climatizzatore Inverno",
           "ac_summer": "Climatizzatore Estate",
-          "both": "Riscaldamento + Climatizzatore"
+          "both": "Misto"
         }
       },
       "slot": {

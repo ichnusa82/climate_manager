@@ -233,10 +233,10 @@
       "heat_source": {
         "name": "Heat - cool source",
         "state": {
-          "heating": "Heating (boiler)",
+          "heating": "Heating",
           "ac": "Air conditioner winter",
           "ac_summer": "Air conditioner summer",
-          "both": "Heating + Air conditioner"
+          "both": "Mixed"
         }
       },
       "slot": {
