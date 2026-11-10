@@ -357,8 +357,22 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         return HVACAction.IDLE
 
     @property
+    def supported_features(self) -> ClimateEntityFeature:
+        features = self._attr_supported_features
+        if self._attr_hvac_mode == HVACMode.COOL:
+            # in Freddo le valvole non lavorano: i preset non si mostrano
+            features &= ~ClimateEntityFeature.PRESET_MODE
+        return features
+
+    @property
+    def preset_modes(self) -> list[str] | None:
+        if not self._presets or self._attr_hvac_mode == HVACMode.COOL:
+            return None
+        return list(self._presets)
+
+    @property
     def preset_mode(self) -> str | None:
-        if not self._presets:
+        if not self._presets or self._attr_hvac_mode == HVACMode.COOL:
             return None
         active = set(self._active_heaters())
         for name, valves in self._presets.items():
@@ -452,7 +466,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         self._zone.persist(self.hass)
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
-        if preset_mode not in self._presets:
+        if self._attr_hvac_mode == HVACMode.COOL or preset_mode not in self._presets:
             return
         valves = self._presets[preset_mode]
         for heater in self._heaters:
