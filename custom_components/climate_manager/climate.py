@@ -58,6 +58,7 @@ from .const import (
     INPUT_CONTACT,
     INPUT_TEMPERATURE,
     CONF_COLD_TOLERANCE,
+    CONF_COOLING_ENABLED,
     CONF_HOT_TOLERANCE,
     CONF_MIN_CYCLE,
     DEFAULT_COOL_TARGET,
@@ -186,8 +187,8 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         self._min_cycle = float(cfg.get(CONF_MIN_CYCLE, 0)) * 60.0  # in secondi
         self._ac: str | None = cfg.get(CONF_AC) or None
         self._ac_commanded = False  # True se il climatizzatore l'abbiamo acceso noi
-        # il freddo si fa solo con il climatizzatore (niente raffrescamento radiante)
-        self._cooling = bool(self._ac)
+        # modalità Freddo: solo con il climatizzatore e se abilitata nelle opzioni
+        self._cooling = bool(self._ac) and bool(cfg.get(CONF_COOLING_ENABLED, True))
         self._cool_target = DEFAULT_COOL_TARGET
         self._last_change: float | None = None
         self._antifreeze = float(cfg.get(CONF_ANTIFREEZE, DEFAULT_ANTIFREEZE))

@@ -52,6 +52,7 @@ Aggiungi l'integrazione una volta **per ogni zona**. Il modulo chiede:
 | Calendari di blocco e modalità | Cosa fare quando un calendario è attivo |
 | Sensore Finestra / Ritardo | Sensori di apertura e minuti prima di sospendere |
 | Antigelo Temperatura | Sotto questa temperatura scalda sempre. 0 = disattivato |
+| Abilita modalità freddo | Mostra la modalità Freddo; richiede il climatizzatore (la selezione Estate/Inverno resta comunque) |
 | Tolleranza caldo / freddo | Isteresi di accensione e spegnimento |
 | Ciclo minimo di accensione | Minuti minimi di accensione, 0 = disattivato |
 | Temperatura minima / massima | Limiti del termostato (di default 15 e 30 °C) |
