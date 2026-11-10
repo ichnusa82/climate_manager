@@ -18,7 +18,7 @@ const I18N = {
     notAuto: "Il termostato non è in Auto: il programma vale solo in modalità Auto.", toAuto: "Passa ad Auto",
     blocked: "Programma bloccato da calendario", missing: "Entità non trovata", noSchedule: "Questa entità non è un termostato Climate Manager",
     error: "Errore nel salvataggio", hint: "Tocca o trascina sui cavalieri",
-    winter: "Inverno", summer: "Estate", seasonTip: "Tocca per cambiare stagione",
+    winter: "Inverno", summer: "Estate", seasonTip: "Tocca per cambiare stagione", seasonAuto: "In Caldo è Inverno, in Freddo è Estate: la stagione si sceglie in Auto",
   },
   en: {
     days: { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" },
@@ -30,7 +30,7 @@ const I18N = {
     notAuto: "The thermostat is not in Auto: the schedule only applies in Auto mode.", toAuto: "Switch to Auto",
     blocked: "Schedule blocked by calendar", missing: "Entity not found", noSchedule: "This entity is not a Climate Manager thermostat",
     error: "Save failed", hint: "Tap or drag over the pegs",
-    winter: "Winter", summer: "Summer", seasonTip: "Tap to change season",
+    winter: "Winter", summer: "Summer", seasonTip: "Tap to change season", seasonAuto: "Heat means Winter, Cool means Summer: pick the season in Auto",
   },
 };
 
@@ -267,7 +267,8 @@ class ClimateManagerScheduleCard extends HTMLElement {
     let season = "";
     if (a.season) {
       const summer = a.season === "summer";
-      season = `<button class="season ${summer ? "summer" : "winter"}" title="${t.seasonTip}">
+      const canPick = st.state === "auto";
+      season = `<button class="season ${summer ? "summer" : "winter"}" ${canPick ? "" : "disabled"} title="${canPick ? t.seasonTip : t.seasonAuto}">
         <ha-icon icon="${summer ? "mdi:white-balance-sunny" : "mdi:snowflake"}"></ha-icon>${summer ? t.summer : t.winter}</button>`;
     }
     this.toggleAttribute("summer", a.season === "summer");
@@ -483,6 +484,7 @@ const STYLE = `
   .season { font: inherit; display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:10px; cursor:pointer;
             border:1px solid var(--divider-color); background:none; color: var(--primary-text-color); }
   .season ha-icon { --mdc-icon-size:16px; }
+  .season:disabled { cursor:default; opacity:.75; }
   .season.winter ha-icon { color: #4fc3f7; } .season.summer ha-icon { color: #ffb300; }
   [hidden] { display: none !important; }
   ha-card { padding: 16px; }
