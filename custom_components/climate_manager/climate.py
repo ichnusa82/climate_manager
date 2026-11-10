@@ -390,7 +390,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
                 attrs["active_source"] = "ac"
             else:
                 attrs["active_source"] = "heating"
-        if self._cooling:
+        if self._season_active():
             attrs["season"] = self._zone.season
         if self._block_cals:
             attrs["blocked"] = self._blocked()
@@ -529,12 +529,16 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         """True se almeno un calendario di blocco ha un evento in corso."""
         return any(self._is_on(c) for c in self._block_cals)
 
+    def _season_active(self) -> bool:
+        """Estate/Inverno vale solo con la sorgente impostata su Climatizzatore."""
+        return bool(self._ac) and self._zone.heat_source == HEAT_SOURCE_AC
+
     def _summer_auto(self) -> bool:
         """True se il termostato è in Auto con stagione Estate (programma di raffrescamento)."""
         return (
             self._attr_hvac_mode == HVACMode.AUTO
             and bool(self._slots)
-            and self._cooling
+            and self._season_active()
             and self._zone.season == SEASON_SUMMER
         )
 
@@ -544,7 +548,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
 
     def _auto_temps(self) -> tuple[float, float]:
         """Temperature comfort e ridotta del programma Auto per la stagione attuale."""
-        if self._cooling and self._zone.season == SEASON_SUMMER:
+        if self._season_active() and self._zone.season == SEASON_SUMMER:
             return self._cool_comfort, self._cool_eco
         return self._comfort, self._eco
 

@@ -11,7 +11,6 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     CONF_AC,
-    CONF_COOLING_ENABLED,
     SEASON_SUMMER,
     SEASON_WINTER,
     DOMAIN,
@@ -32,7 +31,7 @@ async def async_setup_entry(
     entities: list[SelectEntity] = [SlotSelect(entry, zone)]
     if cfg.get(CONF_AC):  # without an AC the heat comes only from the heating system
         entities.append(HeatSourceSelect(entry, zone))
-    if cfg.get(CONF_AC) or cfg.get(CONF_COOLING_ENABLED):  # serve solo se c'è il freddo
+    if cfg.get(CONF_AC):  # attiva solo con la sorgente impostata su Climatizzatore
         entities.append(SeasonSelect(entry, zone))
     async_add_entities(entities)
 
@@ -153,6 +152,10 @@ class SeasonSelect(SelectEntity, RestoreEntity):
     @property
     def icon(self) -> str:
         return "mdi:white-balance-sunny" if self._zone.season == SEASON_SUMMER else "mdi:snowflake"
+
+    @property
+    def available(self) -> bool:
+        return self._zone.heat_source == HEAT_SOURCE_AC
 
     @property
     def current_option(self) -> str:
