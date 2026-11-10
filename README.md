@@ -1,5 +1,7 @@
 # Climate Manager
 
+🇮🇹 Italiano · [🇬🇧 English](README.en.md)
+
 Integrazione personalizzata per Home Assistant che gestisce le zone di riscaldamento e raffrescamento: un termostato per ogni zona, con valvole, caldaia, pompa, climatizzatore, fasce orarie, finestre e antigelo.
 
 Ogni zona diventa un'entità `climate` più alcune entità di supporto, e si configura tutta da interfaccia, senza YAML.

@@ -1,5 +1,7 @@
 # Climate Manager
 
+[🇮🇹 Italiano](README.md) · 🇬🇧 English
+
 A custom integration for Home Assistant that manages heating and cooling zones: one thermostat per zone, with valves, boiler, pump, air conditioner, time slots, windows and antifreeze.
 
 Each zone becomes a `climate` entity plus a few supporting entities, and everything is configured from the UI, with no YAML.
