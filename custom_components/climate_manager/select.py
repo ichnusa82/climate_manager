@@ -11,6 +11,9 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     CONF_AC,
+    CONF_COOLING_ENABLED,
+    SEASON_SUMMER,
+    SEASON_WINTER,
     DOMAIN,
     NEW_SLOT_LABEL,
     lang_of,
@@ -29,6 +32,8 @@ async def async_setup_entry(
     entities: list[SelectEntity] = [SlotSelect(entry, zone)]
     if cfg.get(CONF_AC):  # without an AC the heat comes only from the heating system
         entities.append(HeatSourceSelect(entry, zone))
+    if cfg.get(CONF_AC) or cfg.get(CONF_COOLING_ENABLED):  # serve solo se c'è il freddo
+        entities.append(SeasonSelect(entry, zone))
     async_add_entities(entities)
 
 
@@ -128,3 +133,46 @@ class SlotSelect(SelectEntity):
             editor["start"] = slot["start"]
             editor["end"] = slot["end"]
         self._zone.editor_changed()
+
+
+class SeasonSelect(SelectEntity, RestoreEntity):
+    """Stagione del programma Auto: Inverno scalda, Estate raffresca."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "season"
+    _attr_should_poll = False
+    _attr_options = [SEASON_WINTER, SEASON_SUMMER]
+
+    def __init__(self, entry: ConfigEntry, zone) -> None:
+        self._zone = zone
+        self._attr_unique_id = f"{entry.entry_id}_season"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)}, name=entry.title
+        )
+
+    @property
+    def icon(self) -> str:
+        return "mdi:white-balance-sunny" if self._zone.season == SEASON_SUMMER else "mdi:snowflake"
+
+    @property
+    def current_option(self) -> str:
+        return self._zone.season
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self._zone.listeners.append(self._zone_changed)
+        self.async_on_remove(lambda: self._zone.listeners.remove(self._zone_changed))
+        last = await self.async_get_last_state()
+        if last is not None and last.state in self._attr_options:
+            self._zone.season = last.state
+            self._zone.notify(self.hass)
+
+    async def _zone_changed(self) -> None:
+        self.async_write_ha_state()
+
+    async def async_select_option(self, option: str) -> None:
+        if option not in self._attr_options or option == self._zone.season:
+            return
+        self._zone.season = option
+        self.async_write_ha_state()
+        self._zone.notify(self.hass)

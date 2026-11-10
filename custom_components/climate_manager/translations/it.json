@@ -15,6 +15,8 @@
           "override_value": "Setpoint di override (°C)",
           "comfort_temp": "Temperatura comfort, dentro le fasce (°C)",
           "eco_temp": "Temperatura ridotta, fuori dalle fasce (°C)",
+          "cool_comfort_temp": "Temperatura comfort estate, dentro le fasce (°C)",
+          "cool_eco_temp": "Temperatura ridotta estate, fuori dalle fasce (°C)",
           "block_calendars": "Calendari di blocco (se uno è attivo, il programma è bloccato)",
           "block_mode": "Durante il blocco, in modalità Auto",
           "pump": "Uscita comando accensione pompa (opzionale)",
@@ -73,6 +75,8 @@
           "override_value": "Setpoint di override (°C)",
           "comfort_temp": "Temperatura comfort, dentro le fasce (°C)",
           "eco_temp": "Temperatura ridotta, fuori dalle fasce (°C)",
+          "cool_comfort_temp": "Temperatura comfort estate, dentro le fasce (°C)",
+          "cool_eco_temp": "Temperatura ridotta estate, fuori dalle fasce (°C)",
           "block_calendars": "Calendari di blocco (se uno è attivo, il programma è bloccato)",
           "block_mode": "Durante il blocco, in modalità Auto",
           "pump": "Uscita comando accensione pompa (opzionale)",
@@ -200,6 +204,13 @@
       },
       "slot": {
         "name": "01 Fascia"
+      },
+      "season": {
+        "name": "Stagione",
+        "state": {
+          "winter": "Inverno (caldo)",
+          "summer": "Estate (freddo)"
+        }
       }
     },
     "number": {

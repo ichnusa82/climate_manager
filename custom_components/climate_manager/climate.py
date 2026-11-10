@@ -65,6 +65,11 @@ from .const import (
     CONF_PUMP,
     CONF_COMFORT_TEMP,
     CONF_ECO_TEMP,
+    CONF_COOL_COMFORT_TEMP,
+    CONF_COOL_ECO_TEMP,
+    DEFAULT_COOL_COMFORT_TEMP,
+    DEFAULT_COOL_ECO_TEMP,
+    SEASON_SUMMER,
     CONF_SCHEDULE_SLOTS,
     DEFAULT_COMFORT_TEMP,
     DEFAULT_ECO_TEMP,
@@ -209,6 +214,9 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         self._window_open_since: float | None = None
         self._comfort = float(cfg.get(CONF_COMFORT_TEMP, DEFAULT_COMFORT_TEMP))
         self._eco = float(cfg.get(CONF_ECO_TEMP, DEFAULT_ECO_TEMP))
+        self._cool_comfort = float(cfg.get(CONF_COOL_COMFORT_TEMP, DEFAULT_COOL_COMFORT_TEMP))
+        self._cool_eco = float(cfg.get(CONF_COOL_ECO_TEMP, DEFAULT_COOL_ECO_TEMP))
+        self._last_cooling: bool | None = None
         self._manual_target = DEFAULT_TARGET_TEMP
         self._temp_override: float | None = None
         modes = [HVACMode.HEAT]
@@ -340,7 +348,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
             else any(self._is_on(h) for h in self._active_heaters())
         )
         if active:
-            if self._attr_hvac_mode == HVACMode.COOL:
+            if self._cooling_now():
                 return HVACAction.COOLING
             return HVACAction.HEATING
         return HVACAction.IDLE
@@ -382,6 +390,8 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
                 attrs["active_source"] = "ac"
             else:
                 attrs["active_source"] = "heating"
+        if self._cooling:
+            attrs["season"] = self._zone.season
         if self._block_cals:
             attrs["blocked"] = self._blocked()
         if self._slots and self._contact_mode:
@@ -389,8 +399,8 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         elif self._slots:
             attrs.update(
                 {
-                    "comfort_temperature": self._comfort,
-                    "eco_temperature": self._eco,
+                    "comfort_temperature": self._auto_temps()[0],
+                    "eco_temperature": self._auto_temps()[1],
                     "schedule_state": "comfort" if self._schedule_on() else "eco",
                     "temporary_override": self._temp_override,
                 }
@@ -519,6 +529,25 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         """True se almeno un calendario di blocco ha un evento in corso."""
         return any(self._is_on(c) for c in self._block_cals)
 
+    def _summer_auto(self) -> bool:
+        """True se il termostato è in Auto con stagione Estate (programma di raffrescamento)."""
+        return (
+            self._attr_hvac_mode == HVACMode.AUTO
+            and bool(self._slots)
+            and self._cooling
+            and self._zone.season == SEASON_SUMMER
+        )
+
+    def _cooling_now(self) -> bool:
+        """True se in questo momento il termostato lavora in raffrescamento."""
+        return self._attr_hvac_mode == HVACMode.COOL or self._summer_auto()
+
+    def _auto_temps(self) -> tuple[float, float]:
+        """Temperature comfort e ridotta del programma Auto per la stagione attuale."""
+        if self._cooling and self._zone.season == SEASON_SUMMER:
+            return self._cool_comfort, self._cool_eco
+        return self._comfort, self._eco
+
     def _schedule_on(self) -> bool:
         """True se adesso siamo dentro una fascia comfort."""
         now = dt_util.now()
@@ -531,12 +560,13 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
             self._temp_override = None  # nuova fascia: finisce la modifica temporanea
         self._last_on = on
         if self._attr_hvac_mode == HVACMode.AUTO and self._slots:
+            comfort, eco = self._auto_temps()
             if self._blocked() and self._block_mode == BLOCK_ECO:
-                target = self._eco
+                target = eco
             elif self._temp_override is not None:
                 target = self._temp_override
             else:
-                target = self._comfort if self._schedule_on() else self._eco
+                target = comfort if self._schedule_on() else eco
         elif self._attr_hvac_mode == HVACMode.COOL:
             target = self._cool_target
         else:
@@ -587,7 +617,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
             self._boiler,
             self._calling
             and self._use_heating()
-            and (self._attr_hvac_mode != HVACMode.COOL or self._antifreeze_active),
+            and (not self._cooling_now() or self._antifreeze_active),
         )
 
     async def _async_pump(self) -> None:
@@ -622,7 +652,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         """True se in questo momento la sorgente è il climatizzatore."""
         if self._antifreeze_active or not self._ac:
             return False
-        if self._attr_hvac_mode == HVACMode.COOL:
+        if self._cooling_now():
             return True  # il freddo si fa sempre con il climatizzatore
         if self._attr_hvac_mode in (HVACMode.HEAT, HVACMode.AUTO):
             return self._zone.heat_source in (HEAT_SOURCE_AC, HEAT_SOURCE_BOTH)
@@ -635,6 +665,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         # caldo combinato: radiante e climatizzatore insieme
         return (
             self._attr_hvac_mode in (HVACMode.HEAT, HVACMode.AUTO)
+            and not self._cooling_now()
             and self._zone.heat_source == HEAT_SOURCE_BOTH
         )
 
@@ -650,7 +681,7 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
         if use_ac and self._calling:
             self._ac_commanded = True
             if domain == "climate":
-                mode = "cool" if self._attr_hvac_mode == HVACMode.COOL else "heat"
+                mode = "cool" if self._cooling_now() else "heat"
                 if state.state != mode:
                     await self.hass.services.async_call(
                         "climate",
@@ -726,7 +757,13 @@ class ClimateManagerThermostat(ClimateEntity, RestoreEntity):
             self._attr_hvac_mode = HVACMode.HEAT  # senza fasce non c'è programma
         self._recompute_target()
         cur = self._attr_native_current_temperature
-        cooling_mode = self._attr_hvac_mode == HVACMode.COOL
+        cooling_mode = self._cooling_now()
+        if self._last_cooling is not None and cooling_mode != self._last_cooling:
+            # passaggio caldo <-> freddo (modo o stagione): si riparte da fermo
+            self._calling = False
+            self._last_change = None
+            self._temp_override = None
+        self._last_cooling = cooling_mode
         antifreeze = self._update_antifreeze(cur)
 
         if antifreeze:

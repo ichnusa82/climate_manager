@@ -18,6 +18,7 @@ from .const import (
     DAY_ORDER,
     DOMAIN,
     HEAT_SOURCE_HEATING,
+    SEASON_WINTER,
     get_heaters,
     get_shared_setpoint,
 )
@@ -46,6 +47,7 @@ class ZoneData:
         self.entry = entry
         self.enabled: dict[str, bool] = {h: True for h in heaters}
         self.heat_source: str = HEAT_SOURCE_HEATING  # heating, ac or both
+        self.season: str = SEASON_WINTER  # in Auto: inverno scalda, estate raffresca
         self.shared: dict | None = None  # setpoint caldaia unico (se configurato)
         self.listeners: list = []
         # fasce orarie e relativo editor da dashboard
