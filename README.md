@@ -131,6 +131,8 @@ L'antigelo ha la precedenza su tutto, poi vengono finestra aperta e blocco calen
 
 Le card si caricano in automatico con l'integrazione: non serve aggiungere risorse.
 
+> Negli esempi sostituisci gli entity ID con i tuoi: li trovi nel dispositivo della zona, in **Impostazioni → Dispositivi e servizi → Climate Manager**. Per esempio la Sorgente della zona «Salone» è `select.salone_sorgente_caldo_freddo` con Home Assistant in italiano e `select.salone_heat_cool_source` in inglese.
+
 > Se in passato hai copiato `climate-manager-card.js` in `/config/www`, togli la risorsa `/local/climate-manager-card.js` dalla dashboard e cancella il file.
 
 ### Termostato

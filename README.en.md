@@ -131,6 +131,8 @@ Antifreeze comes first, then open window and blocking calendar, then the normal 
 
 The cards are loaded automatically with the integration: no resources to add.
 
+> In the examples, replace the entity IDs with yours: you find them in the zone's device, under **Settings → Devices & services → Climate Manager**. For example, the Source of the "Salone" zone is `select.salone_heat_cool_source` with Home Assistant in English and `select.salone_sorgente_caldo_freddo` in Italian.
+
 > If you previously copied `climate-manager-card.js` into `/config/www`, remove the `/local/climate-manager-card.js` resource from the dashboard and delete the file.
 
 ### Thermostat
