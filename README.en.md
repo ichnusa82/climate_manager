@@ -136,6 +136,8 @@ The cards are loaded automatically with the integration: no resources to add.
 ### Thermostat
 Dial with a draggable setpoint, mode buttons, source, presets and a status row.
 
+<img src="docs/images/card-termostato.png" alt="Thermostat card" width="320">
+
 ```yaml
 type: custom:climate-manager-card
 entity: climate.salone
@@ -161,6 +163,9 @@ entity: select.salone_sorgente_caldo_freddo
 The Source options have fixed icons: Heating `mdi:water-boiler`, Air conditioner winter `mdi:sun-snowflake-variant`, Air conditioner summer `mdi:snowflake`, Mixed `mdi:fire-circle`. Use `icons:` to pick different ones.
 
 ### Peg-style schedule
+
+<img src="docs/images/card-cronotermostato.png" alt="Schedule card" width="320">
+
 Each peg is a time interval: **up = comfort / in slot**, **down = reduced / outside slot**. Tap or drag to change them, copy a day to other days and press **Save**. A label shows AC winter or AC summer when the source is the air conditioner.
 
 ```yaml
