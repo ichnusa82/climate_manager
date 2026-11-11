@@ -16,7 +16,7 @@
  *     - switch.pompa
  *     - binary_sensor.finestra_salone
  */
-const CARD_VERSION = "1.1.2";
+const CARD_VERSION = "1.1.3";
 const I18N = {
     it: {
         heating: "Riscalda",
@@ -265,7 +265,9 @@ class ClimateManagerCard extends HTMLElement {
         const step = this._step(a);
         const min = Number((_a = a.min_temp) !== null && _a !== void 0 ? _a : 7);
         const max = Number((_b = a.max_temp) !== null && _b !== void 0 ? _b : 35);
-        const isRange = a.temperature == null && a.target_temp_low != null && a.target_temp_high != null;
+        // termostato a contatto (Climate Manager): niente temperature, solo richiesta sì/no
+        const isContact = a.contact_request !== undefined;
+        const isRange = !isContact && a.temperature == null && a.target_temp_low != null && a.target_temp_high != null;
         const p = this._pending || {};
         const target = (_c = p.temperature) !== null && _c !== void 0 ? _c : (a.temperature != null ? Number(a.temperature) : null);
         const low = (_d = p.target_temp_low) !== null && _d !== void 0 ? _d : (a.target_temp_low != null ? Number(a.target_temp_low) : null);
@@ -280,7 +282,11 @@ class ClimateManagerCard extends HTMLElement {
         let fill = "";
         let handles = "";
         if (!off) {
-            if (isRange && low != null && high != null) {
+            if (isContact) {
+                // arco pieno colorato, senza maniglia
+                fill = `<path class="fill" d="${arcPath(ARC_START, end)}" stroke="url(#grad)"/>`;
+            }
+            else if (isRange && low != null && high != null) {
                 const al = this._valueToAngle(low, min, max);
                 const ah = this._valueToAngle(high, min, max);
                 fill = `<path class="fill" d="${arcPath(al, ah)}" stroke="url(#grad)"/>`;
@@ -308,7 +314,7 @@ class ClimateManagerCard extends HTMLElement {
             ticks += `<line class="tick${i % 9 === 0 ? " major" : ""}" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"/>`;
         }
         let curMarker = "";
-        if (cur != null) {
+        if (cur != null && !isContact) {
             const ac = this._valueToAngle(cur, min, max);
             const [x0, y0] = polar(ac, R - 12);
             const [x1, y1] = polar(ac, R - 24);
@@ -318,7 +324,9 @@ class ClimateManagerCard extends HTMLElement {
         const [ex, ey] = polar(end, R + 14);
         const centerValue = off
             ? `<div class="big off-label"><ha-icon icon="${unavailable ? "mdi:lan-disconnect" : "mdi:power"}"></ha-icon></div>`
-            : isRange
+            : isContact
+                ? ""
+                : isRange
                 ? `<div class="big range">${this._fmt(low, step)}<span class="sep">–</span>${this._fmt(high, step)}<span class="unit">°</span></div>`
                 : `<div class="big">${this._fmt(target, step)}<span class="unit">°</span></div>`;
         const dial = `
@@ -339,19 +347,19 @@ class ClimateManagerCard extends HTMLElement {
           <g class="${active ? "glow" : ""}">${fill}</g>
           ${curMarker}
           ${handles}
-          <path class="hit" d="${arcPath(ARC_START, end)}"/>
-          <text class="scale" x="${sx}" y="${sy}" text-anchor="middle">${this._fmt(min, 1)}°</text>
-          <text class="scale" x="${ex}" y="${ey}" text-anchor="middle">${this._fmt(max, 1)}°</text>
+          ${isContact ? "" : `<path class="hit" d="${arcPath(ARC_START, end)}"/>`}
+          ${isContact ? "" : `<text class="scale" x="${sx}" y="${sy}" text-anchor="middle">${this._fmt(min, 1)}°</text>
+          <text class="scale" x="${ex}" y="${ey}" text-anchor="middle">${this._fmt(max, 1)}°</text>`}
         </svg>
         <div class="center">
-          <div class="action ${active ? "on" : ""}" style="--c:${c1};--cp:${rgba(c1, 0.6)}">
+          <div class="action ${active ? "on" : ""} ${isContact && !off ? "solo" : ""}" style="--c:${c1};--cp:${rgba(c1, 0.6)}">
             <span class="dot"></span>${esc(this._actionLabel(so))}
           </div>
           ${centerValue}
-          <div class="current">
+          ${isContact ? "" : `<div class="current">
             <ha-icon icon="mdi:home-thermometer-outline"></ha-icon>${this._fmt(cur, 0.1)}°
             ${a.current_humidity != null ? `<span class="hum"><ha-icon icon="mdi:water-percent"></ha-icon>${Math.round(a.current_humidity)}%</span>` : ""}
-          </div>
+          </div>`}
         </div>
       </div></div>`;
         // --- Pulsanti +/- ---
@@ -509,7 +517,7 @@ class ClimateManagerCard extends HTMLElement {
         root.querySelectorAll("[data-more], .stat[data-entity]").forEach((el) => el.addEventListener("click", () => this._moreInfo(el.dataset.more || el.dataset.entity)));
         // Trascinamento sul quadrante
         const svg = root.querySelector("svg.dial");
-        if (!svg || so.state === "off")
+        if (!svg || so.state === "off" || a.contact_request !== undefined)
             return;
         const angleFromEvent = (ev) => {
             const r = svg.getBoundingClientRect();
@@ -654,6 +662,8 @@ class ClimateManagerCard extends HTMLElement {
       .action { display:flex; align-items:center; font-size: .8rem; font-weight:600; text-transform: uppercase; letter-spacing:.08em; color: var(--muted); }
       .action .dot { width:8px; height:8px; border-radius:50%; background: var(--muted); }
       .action.on { color: var(--c); }
+      .action.solo { font-size: 1.25rem; }
+      .action.solo .dot { width:12px; height:12px; margin-right: 10px; }
       .action.on .dot { background: var(--c); box-shadow: 0 0 0 0 var(--c); animation: pulse 1.8s infinite; }
       @keyframes pulse { 0% { box-shadow: 0 0 0 0 var(--cp); } 100% { box-shadow: 0 0 0 9px transparent; } }
       .big { font-size: 3.6rem; font-weight: 300; line-height: 1.05; color: var(--text); font-variant-numeric: tabular-nums; margin: 2px 0; }
