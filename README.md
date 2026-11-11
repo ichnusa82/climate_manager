@@ -4,32 +4,42 @@
 
 Integrazione personalizzata per Home Assistant che gestisce le zone di riscaldamento e raffrescamento: un termostato per ogni zona, con valvole, caldaia, pompa, climatizzatore, fasce orarie, finestre e antigelo.
 
-Ogni zona diventa un'entità `climate` più alcune entità di supporto, e si configura tutta da interfaccia, senza YAML.
+Ogni zona diventa un'entità `climate` più alcune entità di supporto, e si configura tutta da interfaccia, senza YAML. Con l'integrazione arrivano anche tre card per la dashboard.
+
+<p align="center">
+  <img src="docs/images/card-termostato.png" alt="Card termostato" width="320">
+  &nbsp;
+  <img src="docs/images/card-cronotermostato.png" alt="Card cronotermostato" width="320">
+</p>
 
 ## Cosa fa
 
 - **Ingresso a scelta:** sensore di temperatura oppure termostato fisico (contatto chiuso = richiesta di calore).
 - **Uscite:** una o più valvole/relè, uscita di accensione caldaia, uscita pompa, climatizzatore.
-- **Modalità:** Spento, Caldo, Freddo (solo con climatizzatore) e Auto (con fasce orarie).
+- **Modalità:** Spento, Caldo, Freddo (con climatizzatore) e Auto (con fasce orarie).
+- **Sorgente:** con il climatizzatore si sceglie tra Riscaldamento, Climatizzatore Inverno, Climatizzatore Estate e Misto.
 - **Preset:** per scegliere quali valvole tenere attive (utile se una zona ha più elettrovalvole).
 - **Setpoint caldaia:** un setpoint unico, condiviso da tutte le zone con la stessa caldaia, con valore di override.
-- **Fasce orarie:** temperatura comfort dentro le fasce, temperatura ridotta fuori. Funzionano sia con la sonda sia con il termostato fisico.
+- **Fasce orarie (cronotermostato):** comfort dentro le fasce, ridotta fuori. Funzionano con la sonda e con il termostato fisico, in caldo e in freddo.
 - **Calendari di blocco:** se un calendario è attivo, il programma si blocca (spegne o usa la temperatura ridotta).
-- **Finestre:** se una finestra resta aperta oltre il ritardo, il riscaldamento della zona si sospende.
+- **Finestre:** se una finestra resta aperta oltre il ritardo, la zona si sospende.
 - **Antigelo:** sotto la temperatura impostata scalda sempre, anche da spento.
-- **Sorgente caldo - freddo:** con un climatizzatore configurato si sceglie tra Riscaldamento, Climatizzatore Inverno, Climatizzatore Estate o Misto.
+- **Card incluse:** termostato, selettore e cronotermostato a cavalieri.
 
 ## Installazione
 
-### Manuale
-1. Copia la cartella `climate_manager` in `config/custom_components/`.
-2. Riavvia Home Assistant.
-3. Vai in **Impostazioni → Dispositivi e servizi → Aggiungi integrazione** e cerca **Climate Manager**.
-
 ### HACS
-Quando sarà pubblicata: HACS → Integrazioni → menu ⋮ → Repository personalizzati → incolla l'indirizzo del repository, categoria *Integrazione* → installa e riavvia.
+1. HACS → Integrazioni → menu ⋮ → **Repository personalizzati**.
+2. Incolla `https://github.com/ichnusa82/climate_manager`, categoria *Integrazione*.
+3. Installa **Climate Manager** e riavvia Home Assistant.
 
-> Se arrivi dalla versione precedente chiamata "Termostati" (cartella `radiant`): elimina la vecchia integrazione, cancella la cartella `radiant`, installa `climate_manager`, riavvia e ricrea i termostati con gli stessi nomi.
+### Manuale
+1. Copia la cartella `custom_components/climate_manager` in `config/custom_components/`.
+2. Riavvia Home Assistant.
+
+Poi vai in **Impostazioni → Dispositivi e servizi → Aggiungi integrazione** e cerca **Climate Manager**.
+
+> **Aggiornamento:** dopo ogni aggiornamento riavvia Home Assistant e ricarica il browser (sui tablet con Fully Kiosk svuota la cache).
 
 ## Creare un termostato
 
@@ -46,13 +56,13 @@ Aggiungi l'integrazione una volta **per ogni zona**. Il modulo chiede:
 | Uscita caldaia / pompa | Opzionali: si accendono quando la zona chiede calore |
 | Climatizzatore | Opzionale: entità `climate`, `switch` o `input_boolean` |
 | Setpoint caldaia | Opzionale: `number` o `input_number` (per esempio quello letto dall'ESP8266) |
-| Entità di override | Se è accesa, la caldaia usa il setpoint di override |
-| Setpoint di override | Valore usato quando l'override è attivo |
-| Temperatura comfort / ridotta | Usate in modalità Auto dentro e fuori dalle fasce |
+| Entità di override / Setpoint di override | Se l'entità è accesa, la caldaia usa il setpoint di override |
+| Temperatura comfort / ridotta | Usate in Auto, in caldo, dentro e fuori dalle fasce (di default 20 / 17 °C) |
+| Temperatura comfort / ridotta estate | Usate in Auto con Climatizzatore Estate (di default 26 / 28 °C) |
 | Calendari di blocco e modalità | Cosa fare quando un calendario è attivo |
 | Sensore Finestra / Ritardo | Sensori di apertura e minuti prima di sospendere |
 | Antigelo Temperatura | Sotto questa temperatura scalda sempre. 0 = disattivato |
-| Abilita modalità freddo | Mostra la modalità Freddo e la sorgente Climatizzatore Estate; richiede il climatizzatore |
+| Abilita modalità freddo | Mostra la modalità Freddo e la sorgente Climatizzatore Estate (serve il climatizzatore) |
 | Tolleranza caldo / freddo | Isteresi di accensione e spegnimento |
 | Ciclo minimo di accensione | Minuti minimi di accensione, 0 = disattivato |
 | Temperatura minima / massima | Limiti del termostato (di default 15 e 30 °C) |
@@ -64,13 +74,13 @@ Tutte le impostazioni si possono cambiare dopo: **Dispositivi e servizi → Clim
 Per ogni zona trovi nel dispositivo:
 
 **Controlli**
-- Il **termostato** (`climate`), con preset per le valvole.
+- Il **termostato** (`climate`), con i preset per le valvole.
 - **Sorgente caldo - freddo:** solo se è configurato un climatizzatore.
 - **Setpoint caldaia:** solo se è configurato il setpoint. È unico: le altre zone con la stessa caldaia lo creano disabilitato.
 - Un interruttore **«… attiva»** per ogni valvola, se la zona ne ha almeno due. Serve a escludere una valvola senza cambiare preset.
 
 **Configurazione (editor delle fasce da dashboard)**
-Servono a creare e modificare le fasce senza aprire il menu delle opzioni. Sono in ordine:
+In alternativa alla card cronotermostato, queste entità permettono di gestire le fasce una alla volta:
 
 1. 01 Fascia: sceglie quale fascia modificare, oppure «Nuova fascia»
 2. 02–08 Fascia Lunedì … Domenica: i giorni
@@ -80,18 +90,59 @@ Servono a creare e modificare le fasce senza aprire il menu delle opzioni. Sono 
 6. 12 Elimina fascia
 7. 13 Elimina tutte le fasce
 
-Per creare una fascia: lascia «Nuova fascia», attiva i giorni, imposta inizio e fine, premi **Salva**. Per modificarne una: scegline una dal selettore, cambia i valori e premi **Salva**. Se la fine è prima dell'inizio, la fascia passa la mezzanotte.
+Per creare una fascia: lascia «Nuova fascia», attiva i giorni, imposta inizio e fine, premi **Salva**. Per modificarne una: sceglila dal selettore, cambia i valori e premi **Salva**. Se la fine è prima dell'inizio, la fascia passa la mezzanotte.
 
-Queste entità sono nella sezione *Configurazione* e non compaiono nelle dashboard generate in automatico: aggiungile a mano alle tue card.
+Queste entità sono nella sezione *Configurazione* e non compaiono nelle dashboard generate in automatico.
 
-## Card termostato e selettore
+## Come funziona
 
-Insieme all'integrazione arrivano anche due card, caricate in automatico (non serve aggiungere risorse):
+### Modalità
+- **Caldo:** scalda verso la temperatura impostata a mano, con la sorgente scelta.
+- **Freddo:** raffresca con il climatizzatore verso la temperatura impostata a mano. I preset non si mostrano, perché le valvole non lavorano.
+- **Auto:** segue le fasce orarie (serve almeno una fascia). Dentro le fasce usa la temperatura comfort, fuori la ridotta. Se cambi la temperatura a mano, la modifica vale fino al prossimo cambio di fascia.
+- **Spento:** tutto fermo, salvo l'antigelo.
+
+### Sorgente (termostati con climatizzatore)
+| Sorgente | Cosa fa |
+|---|---|
+| Riscaldamento | Scalda con l'impianto della caldaia (caldaia, pompa, valvole) |
+| Climatizzatore Inverno | Scalda con il climatizzatore |
+| Climatizzatore Estate | Raffresca con il climatizzatore |
+| Misto | Scaldano insieme riscaldamento e climatizzatore |
+
+- Passando a **Caldo**, Climatizzatore Estate diventa Climatizzatore Inverno; in Caldo Climatizzatore Estate non si può scegliere.
+- Passando a **Freddo** la sorgente diventa Climatizzatore Estate, l'unica disponibile.
+- In **Auto** si sceglie liberamente: con Climatizzatore Estate il programma raffresca con le temperature estive, con le altre sorgenti scalda.
+- Climatizzatore Estate c'è solo se la modalità freddo è abilitata. Senza climatizzatore non si raffresca mai.
+
+### Termostato con sonda
+Scalda quando la temperatura scende sotto l'obiettivo meno la *tolleranza freddo* e si ferma quando supera l'obiettivo più la *tolleranza caldo*. Il freddo fa lo stesso al contrario. Il ciclo minimo evita accensioni troppo ravvicinate.
+
+### Termostato fisico
+Decide il contatto: la zona lavora quando il contatto chiede. In Auto il contatto è ascoltato solo dentro le fasce; fuori fascia la zona resta ferma. Il climatizzatore si accende in caldo o in freddo secondo la sorgente.
+
+### Caldaia, pompa e setpoint
+La caldaia e la pompa si accendono quando almeno una zona chiede calore con il riscaldamento (Riscaldamento o Misto), mai in raffrescamento. Il setpoint caldaia è unico: se l'entità di override è accesa, viene scritto il setpoint di override.
+
+### Priorità
+L'antigelo ha la precedenza su tutto, poi vengono finestra aperta e blocco calendario, infine le regole normali.
+
+## Card per la dashboard
+
+Le card si caricano in automatico con l'integrazione: non serve aggiungere risorse.
+
+> Se in passato hai copiato `climate-manager-card.js` in `/config/www`, togli la risorsa `/local/climate-manager-card.js` dalla dashboard e cancella il file.
+
+### Termostato
+Quadrante con setpoint trascinabile, pulsanti delle modalità, sorgente, preset e riga di stato.
 
 ```yaml
 type: custom:climate-manager-card
 entity: climate.salone
-selects:                       # facoltativo: pulsanti per select (es. Sorgente)
+name: Salone                   # facoltativo
+show_modes: true               # facoltativo
+show_presets: true             # facoltativo
+selects:                       # facoltativo: pulsanti per uno o più select
   - select.salone_sorgente_caldo_freddo
 entities:                      # facoltativo: riga di stato
   - entity: switch.caldaia
@@ -99,16 +150,19 @@ entities:                      # facoltativo: riga di stato
   - binary_sensor.finestra_salone
 ```
 
+### Selettore
+Pulsanti per qualsiasi `select` o `input_select`, nello stesso stile.
+
 ```yaml
 type: custom:climate-manager-select-card
 entity: select.salone_sorgente_caldo_freddo
 ```
 
-Se in passato hai copiato `climate-manager-card.js` in `/config/www`, togli la risorsa `/local/climate-manager-card.js` dalla dashboard e cancella il file.
+Le voci della Sorgente hanno icone fisse: Riscaldamento `mdi:water-boiler`, Climatizzatore Inverno `mdi:sun-snowflake-variant`, Climatizzatore Estate `mdi:snowflake`, Misto `mdi:fire-circle`. Con `icons:` puoi sceglierne altre.
 
-## Card cronotermostato (cavalieri)
+### Cronotermostato a cavalieri
 
-L'integrazione installa da sola una card per la dashboard (non serve aggiungere risorse). Ogni cavaliere è un intervallo di 30 minuti: **alto = comfort / in fascia**, **basso = ridotta / fuori fascia**. Tocca o trascina per cambiarli, copia un giorno sugli altri e premi **Salva**.
+Ogni cavaliere è un intervallo di tempo: **alto = comfort / in fascia**, **basso = ridotta / fuori fascia**. Tocca o trascina per cambiarli, copia un giorno sugli altri e premi **Salva**. Un'etichetta mostra Clima Inverno o Clima Estate quando la sorgente è il climatizzatore.
 
 ```yaml
 type: custom:climate-manager-schedule-card
@@ -118,7 +172,9 @@ show_week: true   # riepilogo della settimana (facoltativo)
 title: Salone     # facoltativo
 ```
 
-Le fasce si possono impostare anche con l'azione `climate_manager.set_schedule`:
+## Azione `set_schedule`
+
+Imposta tutte le fasce di un termostato in un colpo solo (è quella usata dalla card cronotermostato):
 
 ```yaml
 action: climate_manager.set_schedule
@@ -129,39 +185,12 @@ data:
     - days: [mon, tue, wed, thu, fri]
       start: "06:30"
       end: "08:30"
+    - days: [sat, sun]
+      start: "08:00"
+      end: "22:00"
 ```
 
-Il programma attuale è nell'attributo `schedule` del termostato.
-
-## Come funziona
-
-### Termostato con sonda
-Scalda quando la temperatura scende sotto l'obiettivo meno la *tolleranza caldo* e si ferma quando supera l'obiettivo più la tolleranza. Lo stesso vale per il freddo con la *tolleranza freddo*. Il ciclo minimo evita accensioni troppo ravvicinate.
-
-### Termostato fisico
-La zona scalda quando il contatto chiede calore. Le fasce orarie, se ci sono, decidono quando il contatto è ascoltato.
-
-### Modalità Auto
-Disponibile quando esiste almeno una fascia. Dentro le fasce usa la temperatura comfort, fuori la ridotta. Se cambi la temperatura a mano, la modifica vale fino al prossimo cambio di fascia. Con un termostato fisico, fuori fascia il riscaldamento resta spento.
-
-### Sorgente (termostati con climatizzatore)
-Il selettore **Sorgente** ha quattro voci:
-- **Riscaldamento**: scalda con l'impianto della caldaia (valvole, pompa, caldaia).
-- **Climatizzatore Inverno**: scalda con il climatizzatore.
-- **Climatizzatore Estate**: raffresca con il climatizzatore.
-- **Misto**: scaldano tutti e due, riscaldamento e climatizzatore.
-
-Passando a **Caldo**, Climatizzatore Estate diventa Climatizzatore Inverno (e non si può scegliere). Passando a **Freddo** la sorgente diventa Climatizzatore Estate. In **Auto** si sceglie liberamente: con Climatizzatore Estate Auto raffresca seguendo le fasce con le temperature comfort/ridotta estive (predefinite 26 / 28 °C), con le altre scalda. Climatizzatore Estate compare solo se la modalità freddo è abilitata. Nella card cronotermostato un'etichetta mostra Clima Inverno / Clima Estate.
-
-### Caldaia, pompa e setpoint
-La caldaia e la pompa si accendono quando almeno una zona chiede calore e solo con il riscaldamento (mai in modalità Freddo). Il setpoint caldaia è unico: se l'entità di override è accesa, viene scritto il setpoint di override.
-
-### Climatizzatore e sorgente
-- **Freddo** usa sempre il climatizzatore.
-- **Caldo** usa la sorgente scelta: Riscaldamento, Climatizzatore Inverno oppure Misto. Misto funziona solo in caldo.
-
-### Priorità
-L'antigelo ha la precedenza su tutto, poi vengono finestra aperta e blocco calendario, infine le regole normali.
+Una fine `00:00` vale mezzanotte. Il programma attuale è nell'attributo `schedule` del termostato.
 
 ## Opzioni (menu Configura)
 
@@ -171,19 +200,23 @@ L'antigelo ha la precedenza su tutto, poi vengono finestra aperta e blocco calen
 
 ## Lingue
 
-Italiano e inglese, secondo la lingua di Home Assistant. Le fasce usano le sigle dei giorni della lingua scelta.
+Italiano e inglese, secondo la lingua di Home Assistant.
 
 ## Domande frequenti
 
 **Il setpoint caldaia torna a 28.** È il valore minimo ammesso. Succede se nessuna zona chiede calore e non c'è un valore salvato: controlla che l'entità di override e il setpoint siano quelli giusti.
 
-**Non vedo le entità delle fasce.** Sono nella sezione *Configurazione* del dispositivo.
+**In Auto il termostato fisico non accende niente.** Dentro la fascia la zona lavora solo se anche il contatto chiede.
+
+**Non vedo la modalità Freddo.** Serve un climatizzatore configurato e l'opzione *Abilita modalità freddo* attiva.
+
+**La card non si aggiorna dopo un aggiornamento.** Ricarica il browser; sul tablet svuota la cache di Fully Kiosk.
 
 **Ho cambiato nome a una zona e gli entity ID sono rimasti vecchi.** Home Assistant non rinomina gli entity ID esistenti. Cambiali dalle impostazioni dell'entità.
 
 ## Limiti noti
 
-L'integrazione è stata scritta e controllata nel codice, ma non è ancora stata provata a lungo su impianti diversi. Segnala i problemi nel repository.
+L'integrazione è in prova su un impianto reale, ma non ancora su impianti diversi. Segnala i problemi nel repository.
 
 ## Licenza
 
