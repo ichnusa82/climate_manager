@@ -136,8 +136,6 @@ Le card si caricano in automatico con l'integrazione: non serve aggiungere risor
 ### Termostato
 Quadrante con setpoint trascinabile, pulsanti delle modalità, sorgente, preset e riga di stato.
 
-<img src="docs/images/card-termostato.png" alt="Card termostato" width="320">
-
 ```yaml
 type: custom:climate-manager-card
 entity: climate.salone
@@ -163,9 +161,6 @@ entity: select.salone_sorgente_caldo_freddo
 Le voci della Sorgente hanno icone fisse: Riscaldamento `mdi:water-boiler`, Climatizzatore Inverno `mdi:sun-snowflake-variant`, Climatizzatore Estate `mdi:snowflake`, Misto `mdi:fire-circle`. Con `icons:` puoi sceglierne altre.
 
 ### Cronotermostato a cavalieri
-
-<img src="docs/images/card-cronotermostato.png" alt="Card cronotermostato" width="320">
-
 
 Ogni cavaliere è un intervallo di tempo: **alto = comfort / in fascia**, **basso = ridotta / fuori fascia**. Tocca o trascina per cambiarli, copia un giorno sugli altri e premi **Salva**. Un'etichetta mostra Clima Inverno o Clima Estate quando la sorgente è il climatizzatore.
 
