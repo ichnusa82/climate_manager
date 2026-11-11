@@ -283,8 +283,9 @@ class ClimateManagerCard extends HTMLElement {
         let handles = "";
         if (!off) {
             if (isContact) {
-                // arco pieno colorato, senza maniglia
-                fill = `<path class="fill" d="${arcPath(ARC_START, end)}" stroke="url(#grad)"/>`;
+                // arco pieno colorato solo quando il contatto chiede (in attesa resta grigio), senza maniglia
+                if (active)
+                    fill = `<path class="fill" d="${arcPath(ARC_START, end)}" stroke="url(#grad)"/>`;
             }
             else if (isRange && low != null && high != null) {
                 const al = this._valueToAngle(low, min, max);
