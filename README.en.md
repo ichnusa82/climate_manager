@@ -84,9 +84,9 @@ As an alternative to the schedule card, these entities manage the slots one at a
 
 1. 01 Slot: picks the slot to edit, or "New slot"
 2. 02–08 Slot Monday … Sunday: the days
-3. 09 Slot start
-4. 10 Slot end
-5. 11 Save slot
+3. 09 Time slot start
+4. 10 Time slot end
+5. 11 Save time slot
 6. 12 Delete slot
 7. 13 Delete all slots
 
